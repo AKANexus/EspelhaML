@@ -3,12 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EspelhaML.Controllers
 {
-    [Route("v1/[controller]"), ApiController]
+    [Route(""),ApiController]
     public class CallbackController : ControllerBase
     {
-        public IActionResult MlRedirect([FromQuery] string code)
-        {
-
-        }
+        public async Task<IActionResult> MlCallback ()
     }
 }

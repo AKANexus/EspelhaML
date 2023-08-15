@@ -11,12 +11,12 @@ namespace EspelhaML.Services
         public MlApiService(IConfiguration configuration)
         {
             _configuration = configuration;
-            _mlClient = new RestClient("https://api.mercadolivre.com.br/");
+            _mlClient = new RestClient("https://api.mercadolibre.com");
         }
 
         public async Task<(int status, AccessTokenDto? data)> ExchangeCodeForFirstLogin(string code)
         {
-            RestRequest exchangeRequest = new RestRequest()
+            RestRequest exchangeRequest = new RestRequest("oauth/token")
                 .AddJsonBody(new
                 {
                     grant_type = "authorization_code",
@@ -43,7 +43,7 @@ namespace EspelhaML.Services
 
         public async Task<(int status, AccessTokenDto? data)> RefreshAccessToken(string refreshToken)
         {
-            RestRequest refreshAccessTokenRequest = new RestRequest()
+            RestRequest refreshAccessTokenRequest = new RestRequest("oauth/token")
                 .AddJsonBody(new
                 {
                     grant_type = "refresh_token",
@@ -67,5 +67,27 @@ namespace EspelhaML.Services
             }
 
         }
+
+        public async Task<(int status, QuestionRootDto? data)> GetQuestionById(string accessToken, string questionId)
+        {
+            RestRequest getQuestionRequest = new RestRequest($"/questions/{questionId}")
+                .AddHeader("Authorization", $"Bearer {accessToken}")
+                .AddQueryParameter("api_version", "4")
+                ;
+
+            RestResponse<QuestionRootDto> response = await
+                _mlClient.ExecuteGetAsync<QuestionRootDto>(getQuestionRequest);
+
+            if (!response.IsSuccessful)
+            {
+                return ((int)response.StatusCode, response.Data ?? null);
+            }
+
+            else
+            {
+                return ((int)response.StatusCode, response.Data);
+            }
+        }
+
     }
 }

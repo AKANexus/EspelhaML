@@ -18,6 +18,7 @@ namespace EspelhaML.Controllers
             _provider = provider;
         }
 
+        [HttpGet(nameof(MlRedirect))]
         public async Task<IActionResult> MlRedirect([FromQuery] string code)
         {
             using IServiceScope serviceScope = _provider.CreateScope();
@@ -42,7 +43,7 @@ namespace EspelhaML.Controllers
                     MlUserAuthInfo tentative =
                         (await context.MlUserAuthInfos.FirstOrDefaultAsync(x => x.UserId == data.UserId)
                          ??
-                         new MlUserAuthInfo(data.AccessToken!, DateTime.UtcNow.AddSeconds(data.ExpiresIn ?? 21600), (long)data.UserId!,
+                         new MlUserAuthInfo(data.AccessToken!, DateTime.Now.AddSeconds(data.ExpiresIn ?? 21600), (long)data.UserId!,
                              data.RefreshToken!)
                         );
 

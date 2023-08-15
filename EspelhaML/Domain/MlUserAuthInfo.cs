@@ -1,4 +1,6 @@
-﻿namespace EspelhaML.Domain
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace EspelhaML.Domain
 {
     public class MlUserAuthInfo : EntityBase
     {
@@ -6,6 +8,8 @@
         public DateTime ExpiresOn { get; set; }
         public long UserId { get; set; }
         public string RefreshToken { get; set; }
+        [NotMapped]
+        public bool IsExpired => DateTime.Now > ExpiresOn;
 
         public MlUserAuthInfo(string accessToken, DateTime expiresOn, long userId, string refreshToken)
         {

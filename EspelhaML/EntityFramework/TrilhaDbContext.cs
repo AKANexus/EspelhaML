@@ -7,6 +7,8 @@ namespace EspelhaML.EntityFramework
     public class TrilhaDbContext : DbContext
     {
         public DbSet<MlUserAuthInfo> MlUserAuthInfos { get; set; } = null!;
+        public DbSet<EspelhoLog> Logs { get; set; } = null!;
+        public DbSet<Question> Questions { get; set; } = null!;
 
         public TrilhaDbContext(DbContextOptions options) : base(options)
         {
@@ -17,7 +19,7 @@ namespace EspelhaML.EntityFramework
         {
             if (entity is EntityBase auditableEntity)
             {
-                auditableEntity.CreatedAt = DateTime.UtcNow;
+                auditableEntity.CreatedAt = DateTime.Now;
                 auditableEntity.UpdatedAt = auditableEntity.CreatedAt;
             }
             return base.Add(entity);
@@ -27,7 +29,11 @@ namespace EspelhaML.EntityFramework
         {
             if (entity is EntityBase auditableEntity)
             {
-                auditableEntity.UpdatedAt = DateTime.UtcNow;
+                if (auditableEntity.CreatedAt == default)
+                {
+                    auditableEntity.CreatedAt = DateTime.Now;
+                }
+                auditableEntity.UpdatedAt = DateTime.Now;
             }
             return base.Update(entity);
         }

@@ -31,7 +31,8 @@ namespace EspelhaML.Services
             if (tentativo == null)
             {
                 tentativo = new((long)questionResponse.data.Id, questionResponse.data.Text!, questionResponse.data.From!.Id,
-                    questionResponse.data.DateCreated, questionResponse.data.Status, questionResponse.data.ItemId!);
+                    questionResponse.data.DateCreated, questionResponse.data.Status, questionResponse.data.ItemId!,
+                    questionResponse.data.SellerId);
             }
             else
             {

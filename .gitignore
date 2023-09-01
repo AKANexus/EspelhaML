@@ -363,3 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 /EspelhaML/appsettings.json
 /EspelhaML/appsettings.Development.json
+/EspelhaML/appsettings.json
+/NotificationTest/NotificationTest.csproj
+/SignalRChat/appsettings.json

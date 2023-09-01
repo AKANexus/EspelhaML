@@ -120,6 +120,9 @@ namespace EspelhaML.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Uuid");
 
                     b.ToTable("Questions");

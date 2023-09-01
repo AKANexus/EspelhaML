@@ -15,27 +15,88 @@ namespace EspelhaML.EntityFramework
             
         }
 
-        public override EntityEntry<TEntity> Add<TEntity>(TEntity entity)
+        public override int SaveChanges()
         {
-            if (entity is EntityBase auditableEntity)
+            var now = DateTime.UtcNow;
+
+            foreach (var entry in ChangeTracker.Entries())
             {
-                auditableEntity.CreatedAt = DateTime.Now;
-                auditableEntity.UpdatedAt = auditableEntity.CreatedAt;
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Property("CreatedAt").CurrentValue = now;
+                    entry.Property("UpdatedAt").CurrentValue = now;
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    entry.Property("UpdatedAt").CurrentValue = now;
+                }
             }
-            return base.Add(entity);
+
+            return base.SaveChanges();
         }
 
-        public override EntityEntry<TEntity> Update<TEntity>(TEntity entity)
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
         {
-            if (entity is EntityBase auditableEntity)
+            var now = DateTime.UtcNow;
+
+            foreach (var entry in ChangeTracker.Entries())
             {
-                if (auditableEntity.CreatedAt == default)
+                if (entry.State == EntityState.Added)
                 {
-                    auditableEntity.CreatedAt = DateTime.Now;
+                    entry.Property("CreatedAt").CurrentValue = now;
+                    entry.Property("UpdatedAt").CurrentValue = now;
                 }
-                auditableEntity.UpdatedAt = DateTime.Now;
+                else if (entry.State == EntityState.Modified)
+                {
+                    entry.Property("UpdatedAt").CurrentValue = now;
+                }
             }
-            return base.Update(entity);
+
+            return base.SaveChangesAsync(cancellationToken);
         }
+
+        //public override EntityEntry Add(object entity)
+        //{
+        //    if (entity is EntityBase auditableEntity)
+        //    {
+        //        auditableEntity.CreatedAt = DateTime.Now;
+        //        auditableEntity.UpdatedAt = auditableEntity.CreatedAt;
+        //    }
+        //    return base.Add(entity);
+        //}
+
+        //public override EntityEntry<TEntity> Add<TEntity>(TEntity entity)
+        //{
+        //    if (entity is EntityBase auditableEntity)
+        //    {
+        //        auditableEntity.CreatedAt = DateTime.Now;
+        //        auditableEntity.UpdatedAt = auditableEntity.CreatedAt;
+        //    }
+        //    return base.Add(entity);
+        //}
+
+        //public override ValueTask<EntityEntry<TEntity>> AddAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = new CancellationToken())
+        //{
+        //    if (entity is EntityBase auditableEntity)
+        //    {
+        //        auditableEntity.CreatedAt = DateTime.Now;
+        //        auditableEntity.UpdatedAt = auditableEntity.CreatedAt;
+        //    }
+        //    return base.AddAsync(entity, cancellationToken);
+        //}
+
+        //public override EntityEntry<TEntity> Update<TEntity>(TEntity entity)
+        //{
+        //    if (entity is EntityBase auditableEntity)
+        //    {
+        //        if (auditableEntity.CreatedAt == default)
+        //        {
+        //            auditableEntity.CreatedAt = DateTime.Now;
+        //        }
+        //        auditableEntity.UpdatedAt = DateTime.Now;
+        //    }
+        //    return base.Update(entity);
+        //}
+
     }
 }

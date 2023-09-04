@@ -33,18 +33,30 @@ namespace EspelhaML.Services
                 tentativo = new((long)questionResponse.data.Id, questionResponse.data.Text!, questionResponse.data.From!.Id,
                     questionResponse.data.DateCreated, questionResponse.data.Status, questionResponse.data.ItemId!,
                     questionResponse.data.SellerId);
+
+                if (questionResponse.data.Answer != null)
+                {
+                    tentativo.AnswerStatus = questionResponse.data.Answer.Status;
+                    tentativo.DateReplied = questionResponse.data.Answer.DateCreated;
+                    tentativo.AnswerText = questionResponse.data.Answer.Text;
+                }
             }
-            else
+            else if (tentativo.QuestionStatus != questionResponse.data.Status || tentativo.AnswerStatus != questionResponse.data.Answer?.Status)
             {
                 tentativo.QuestionStatus = questionResponse.data.Status;
                 tentativo.QuestionText = questionResponse.data.Text ?? "NULL";
+
+                if (questionResponse.data.Answer != null)
+                {
+                    tentativo.AnswerStatus = questionResponse.data.Answer.Status;
+                    tentativo.DateReplied = questionResponse.data.Answer.DateCreated;
+                    tentativo.AnswerText = questionResponse.data.Answer.Text;
+                }
             }
 
-            if (questionResponse.data.Answer != null)
+            else
             {
-                tentativo.AnswerStatus = questionResponse.data.Answer.Status;
-                tentativo.DateReplied = questionResponse.data.Answer.DateCreated;
-                tentativo.AnswerText = questionResponse.data.Answer.Text;
+                return;
             }
 
             context.Questions.Update(tentativo);

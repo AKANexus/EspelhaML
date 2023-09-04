@@ -56,6 +56,14 @@ namespace EspelhaML.Controllers
                     accessToken.ExpiresOn = DateTime.Now.AddSeconds(newAccessToken.data.ExpiresIn ?? 21600);
                     accessToken.AccessToken = newAccessToken.data.AccessToken;
                     accessToken.RefreshToken = newAccessToken.data.RefreshToken;
+
+                    (int status, MeDto? data) meData = await mlApi.GetMeInfo(accessToken.AccessToken);
+                    if (meData.data != null)
+                    {
+                        accessToken.AccountNickname = meData.data.Nickname;
+                        accessToken.AccountRegistry = meData.data.Identification.Number;
+                    }
+                    
                     context.Update(accessToken);
                     await context.SaveChangesAsync();
                     return accessToken.AccessToken;
@@ -74,18 +82,23 @@ namespace EspelhaML.Controllers
 
             string? accessToken = await GetAccessTokenByUserId(notification.UserId);
             if (accessToken == null) return;
-            if (!ulong.TryParse(notification.Resource.Split('/').Last(), out ulong resourceId))
-            {
-                context.Logs.Add(new EspelhoLog(nameof(ProcessCallback),
-                    $"Falha ao obter resourceId de {notification.Resource}"));
-                await context.SaveChangesAsync();
-                return;
-            }
+            ulong.TryParse(notification.Resource.Split('/').Last(), out var resourceId);
             switch (notification.Topic)
             {
                 case "questions":
+                    if (resourceId == 0)
+                    {
+                        context.Logs.Add(new EspelhoLog(nameof(ProcessCallback),
+                            $"Falha ao obter resourceId de {notification.Resource}"));
+                        await context.SaveChangesAsync();
+                        return;
+                    }
                     ProcessQuestionService processQuestionService = scopedProvider.GetRequiredService<ProcessQuestionService>();
                   await processQuestionService.ProcessInfo(resourceId, accessToken);
+                    break;
+                case "items":
+                    ProcessItemService processItemService = scopedProvider.GetRequiredService<ProcessItemService>();
+                    await processItemService.ProcessInfo(notification.Resource.Split('/').Last(), accessToken);
                     break;
                 default:
                     break;

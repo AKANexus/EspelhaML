@@ -11,6 +11,9 @@ namespace EspelhaML.Domain
         [NotMapped]
         public bool IsExpired => DateTime.Now > ExpiresOn;
 
+        public string AccountNickname { get; set; }
+        public string AccountRegistry { get; set; }
+
         public MlUserAuthInfo(string accessToken, DateTime expiresOn, long userId, string refreshToken)
         {
             AccessToken = accessToken;

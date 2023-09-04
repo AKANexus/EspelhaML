@@ -14,6 +14,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<MlApiService>();
 builder.Services.AddScoped<ProcessQuestionService>();
+builder.Services.AddScoped<ProcessItemService>();
 
 NpgsqlConnectionStringBuilder csb = new()
 {

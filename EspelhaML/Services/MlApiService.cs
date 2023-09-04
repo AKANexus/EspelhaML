@@ -1,4 +1,5 @@
-﻿using EspelhaML.DTO;
+﻿using System.Text.Json;
+using EspelhaML.DTO;
 using RestSharp;
 
 namespace EspelhaML.Services
@@ -41,6 +42,25 @@ namespace EspelhaML.Services
             }
         }
 
+        public async Task<(int status, MeDto? data)> GetMeInfo(string accessToken)
+        {
+            RestRequest getMeInfoRequest = new RestRequest("users/me")
+                .AddHeader("Authorization", $"Bearer {accessToken}");
+
+            RestResponse<MeDto> response = await
+                _mlClient.ExecuteGetAsync<MeDto>(getMeInfoRequest);
+
+            if (!response.IsSuccessful)
+            {
+                return ((int)response.StatusCode, response.Data ?? null);
+            }
+
+            else
+            {
+                return ((int)response.StatusCode, response.Data);
+            }
+        }
+        
         public async Task<(int status, AccessTokenDto? data)> RefreshAccessToken(string refreshToken)
         {
             RestRequest refreshAccessTokenRequest = new RestRequest("oauth/token")
@@ -77,6 +97,29 @@ namespace EspelhaML.Services
 
             RestResponse<QuestionRootDto> response = await
                 _mlClient.ExecuteGetAsync<QuestionRootDto>(getQuestionRequest);
+
+            if (!response.IsSuccessful)
+            {
+                return ((int)response.StatusCode, response.Data ?? null);
+            }
+
+            else
+            {
+                return ((int)response.StatusCode, response.Data);
+            }
+        }
+
+        public async Task<(int status, ItemRootDto? data)> GetItemById(string accessToken, string itemId)
+        {
+            RestRequest getQuestionRequest = new RestRequest($"/items/{itemId}")
+                    .AddHeader("Authorization", $"Bearer {accessToken}")
+                    //.AddQueryParameter("api_version", "4")
+                ;
+
+            RestResponse<ItemRootDto> response = await
+                _mlClient.ExecuteGetAsync<ItemRootDto>(getQuestionRequest);
+
+            
 
             if (!response.IsSuccessful)
             {

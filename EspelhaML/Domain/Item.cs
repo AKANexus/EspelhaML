@@ -2,6 +2,7 @@
 {
     public class Item : EntityBase
     {
+
         public Item(string id, string título, ulong sellerId, string category, decimal preçoVenda, int quantidadeÀVenda, string permalink, string primeiraFoto, bool éVariação)
         {
             Id = id;
@@ -24,7 +25,7 @@
         public string Permalink { get; set; }
         public string PrimeiraFoto { get; set; }
         public bool ÉVariação { get; set; } = false;
-        public List<ItemVariação> ItemVariação { get; set; } = new();
+        public List<ItemVariação> Variações { get; set; } = new();
     }
 
     public class ItemVariação : EntityBase

@@ -19,9 +19,9 @@ namespace EspelhaML.Services
 
         public async Task ProcessInfo(string resourceId, string apiToken)
         {
-            IServiceProvider scopeProvider = _provider.CreateScope().ServiceProvider;
-            MlApiService mlApi = scopeProvider.GetRequiredService<MlApiService>();
-            TrilhaDbContext context = scopeProvider.GetRequiredService<TrilhaDbContext>();
+            IServiceProvider scopedProvider = _provider.CreateScope().ServiceProvider;
+            MlApiService mlApi = scopedProvider.GetRequiredService<MlApiService>();
+            TrilhaDbContext context = scopedProvider.GetRequiredService<TrilhaDbContext>();
             var itemResponse = await mlApi.GetItemById(apiToken, resourceId);
             if (itemResponse.data?.Id is null)
             {
@@ -32,24 +32,24 @@ namespace EspelhaML.Services
             }
 
             Item? tentativo = await context.Itens
-                .Include(item => item.ItemVariação)
+                .Include(item => item.Variações)
                 .FirstOrDefaultAsync(x => x.Id == itemResponse.data.Id);
             if (tentativo == null)
             {
                 tentativo = new Item(
-                    id: itemResponse.data.Id,
-                    título: itemResponse.data.Title,
-                    sellerId: itemResponse.data.SellerId,
                     category: itemResponse.data.CategoryId,
+                    éVariação: itemResponse.data.Variations.Count > 0,
+                    id: itemResponse.data.Id,
+                    sellerId: itemResponse.data.SellerId,
                     preçoVenda: (decimal)itemResponse.data.Price,
                     quantidadeÀVenda: (itemResponse.data.AvailableQuantity ?? 0),
                     permalink: itemResponse.data.Permalink,
                     primeiraFoto: itemResponse.data.Pictures[0].Url,
-                    éVariação: itemResponse.data.Variations.Count > 0
+                    título: itemResponse.data.Title
                 );
                 if (tentativo.ÉVariação)
                 {
-                    tentativo.ItemVariação
+                    tentativo.Variações
                         .AddRange(itemResponse.data.Variations
                             .Select(x=>new ItemVariação(id:x.Id, preçoVenda:(decimal)(x.Price ?? 0), 
                                 descritorVariação:string.Join(' ', x.AttributeCombinations.Select(y=>$"{y.Name}: {y.ValueName}")
@@ -69,10 +69,10 @@ namespace EspelhaML.Services
                 {
                     foreach (Variation variation in itemResponse.data.Variations)
                     {
-                        var variaçãoTentativa = tentativo.ItemVariação.FirstOrDefault(x => x.Id == variation.Id);
+                        var variaçãoTentativa = tentativo.Variações.FirstOrDefault(x => x.Id == variation.Id);
                         if (variaçãoTentativa is null)
                         {
-                            tentativo.ItemVariação.Add(
+                            tentativo.Variações.Add(
                                 new ItemVariação(variation.Id,
                                     string.Join(' ', variation.AttributeCombinations.Select(y => $"{y.Name}: {y.ValueName}")),
                                 (decimal)(variation.Price ?? 0)));
@@ -85,17 +85,17 @@ namespace EspelhaML.Services
                         }
                     }
 
-                    foreach (ItemVariação itemVariação in tentativo.ItemVariação)
+                    foreach (ItemVariação itemVariação in tentativo.Variações)
                     {
                         if (itemResponse.data.Variations.All(x => x.Id != itemVariação.Id))
                         {
-                            tentativo.ItemVariação.Remove(itemVariação);
+                            tentativo.Variações.Remove(itemVariação);
                         }
                     }
                 }
                 else
                 {
-                    tentativo.ItemVariação.Clear();
+                    tentativo.Variações.Clear();
                 }
             }
             //Falta fazer uma checagem para atualizações não serem desencadeadas a qualquer notificação do ML

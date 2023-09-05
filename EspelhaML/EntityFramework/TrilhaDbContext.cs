@@ -10,6 +10,7 @@ namespace EspelhaML.EntityFramework
         public DbSet<EspelhoLog> Logs { get; set; } = null!;
         public DbSet<Question> Questions { get; set; } = null!;
         public DbSet<Item> Itens { get; set; } = null!;
+        public DbSet<Pedido> Pedidos { get; set; } = null!;
 
         public TrilhaDbContext(DbContextOptions options) : base(options)
         {

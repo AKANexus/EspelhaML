@@ -109,6 +109,26 @@ namespace EspelhaML.Services
             }
         }
 
+        public async Task<(int status, OrderRootDto? data)> GetOrderById(string accessToken, string orderId)
+        {
+            RestRequest getOrderRequest = new RestRequest($"/orders/{orderId}")
+                    .AddHeader("Authorization", $"Bearer {accessToken}")
+                ;
+
+            RestResponse<OrderRootDto> response = await
+                _mlClient.ExecuteGetAsync<OrderRootDto>(getOrderRequest);
+
+            if (!response.IsSuccessful)
+            {
+                return ((int)response.StatusCode, response.Data ?? null);
+            }
+
+            else
+            {
+                return ((int)response.StatusCode, response.Data);
+            }
+        }
+
         public async Task<(int status, ItemRootDto? data)> GetItemById(string accessToken, string itemId)
         {
             RestRequest getQuestionRequest = new RestRequest($"/items/{itemId}")

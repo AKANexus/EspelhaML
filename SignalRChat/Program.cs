@@ -10,18 +10,18 @@ builder.Services.AddSignalR();
 builder.Services.AddSingleton<PostgresNotificationService>();
 builder.Services.AddDistributedMemoryCache();
 
-NpgsqlConnectionStringBuilder csb = new()
-{
-    Database = "meliEspelho",
-    Port = 5351,
-    Username = "meliDBA",
-    Password = builder.Configuration.GetSection("SuperSecretSettings")["NpgPassword"],
-#if DEBUG
-    Host = "192.168.10.215"
-#else
-    Host = "tinformatica.dyndns.org"
-#endif
-};
+//NpgsqlConnectionStringBuilder csb = new()
+//{
+//    Database = "meliEspelho",
+//    Port = 5351,
+//    Username = "meliDBA",
+//    Password = builder.Configuration.GetSection("SuperSecretSettings")["NpgPassword"],
+//#if DEBUG
+//    Host = "192.168.10.215"
+//#else
+//    Host = "tinformatica.dyndns.org"
+//#endif
+//};
 
 
 

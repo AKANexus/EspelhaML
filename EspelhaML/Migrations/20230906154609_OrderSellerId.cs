@@ -5,25 +5,25 @@
 namespace MlSynch.Migrations
 {
     /// <inheritdoc />
-    public partial class SellerIdCol : Migration
+    public partial class OrderSellerId : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<long>(
-                name: "UserId",
-                table: "Questions",
-                type: "bigint",
+            migrationBuilder.AddColumn<decimal>(
+                name: "SellerId",
+                table: "Pedidos",
+                type: "numeric(20,0)",
                 nullable: false,
-                defaultValue: 0L);
+                defaultValue: 0m);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "UserId",
-                table: "Questions");
+                name: "SellerId",
+                table: "Pedidos");
         }
     }
 }

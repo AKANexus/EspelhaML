@@ -1,8 +1,9 @@
-﻿namespace EspelhaML.Domain.Enums
+﻿namespace MlSuite.Domain.Enums
 {
     public enum ShipmentStatus
     {
-        Pendente,
+        Desconhecido = -1,
+        Pendente = 1,
         FretePago,
         Autorizado,
         Enviado,
@@ -13,9 +14,13 @@
 
     public enum ShipmentSubStatus
     {
-        Impresso,
+        Desconhecido = -1,
+        Impresso = 1,
         Coletado,
         AutorizadoPelaTransportadora,
-        NoHub
+        NoHub,
+        EmRotaEntrega,
+        RetornandoAoVendedor,
+        FulfilledFeedback
     }
 }

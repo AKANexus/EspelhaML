@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace EspelhaML.Migrations
+namespace MlSynch.Migrations
 {
     /// <inheritdoc />
     public partial class ItensTable : Migration

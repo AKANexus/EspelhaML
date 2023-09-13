@@ -3,6 +3,7 @@ using System;
 using MlSuite.EntityFramework.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MlSynch.Migrations
 {
     [DbContext(typeof(TrilhaDbContext))]
-    partial class TrilhaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230906151315_DestinatarioNullable2")]
+    partial class DestinatarioNullable2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -93,8 +96,6 @@ namespace MlSynch.Migrations
 
                     b.HasKey("Uuid");
 
-                    b.HasAlternateKey("Id");
-
                     b.ToTable("Itens");
                 });
 
@@ -124,8 +125,6 @@ namespace MlSynch.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Uuid");
-
-                    b.HasAlternateKey("Id");
 
                     b.HasIndex("ItemUuid");
 
@@ -189,9 +188,6 @@ namespace MlSynch.Migrations
                     b.Property<decimal>("Id")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<decimal>("SellerId")
-                        .HasColumnType("numeric(20,0)");
-
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -199,8 +195,6 @@ namespace MlSynch.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Uuid");
-
-                    b.HasAlternateKey("Id");
 
                     b.HasIndex("EnvioUuid");
 
@@ -231,7 +225,7 @@ namespace MlSynch.Migrations
                     b.Property<string>("Distrito")
                         .HasColumnType("text");
 
-                    b.Property<decimal?>("Id")
+                    b.Property<decimal>("Id")
                         .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("Logradouro")
@@ -284,6 +278,7 @@ namespace MlSynch.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("CódRastreamento")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid?>("DestinatárioUuid")
@@ -317,8 +312,6 @@ namespace MlSynch.Migrations
                         .HasColumnType("numeric");
 
                     b.HasKey("Uuid");
-
-                    b.HasAlternateKey("Id");
 
                     b.HasIndex("DestinatárioUuid");
 
@@ -406,8 +399,6 @@ namespace MlSynch.Migrations
 
                     b.HasKey("Uuid");
 
-                    b.HasAlternateKey("Id");
-
                     b.HasIndex("PedidoUuid");
 
                     b.ToTable("PedidoPagamento");
@@ -459,8 +450,6 @@ namespace MlSynch.Migrations
                         .HasColumnType("bigint");
 
                     b.HasKey("Uuid");
-
-                    b.HasAlternateKey("Id");
 
                     b.ToTable("Questions");
                 });

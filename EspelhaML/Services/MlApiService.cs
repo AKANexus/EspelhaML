@@ -1,8 +1,7 @@
-﻿using System.Text.Json;
-using EspelhaML.DTO;
+﻿using MlSuite.MlSynch.DTO;
 using RestSharp;
 
-namespace EspelhaML.Services
+namespace MlSuite.MlSynch.Services
 {
     public class MlApiService
     {
@@ -24,7 +23,12 @@ namespace EspelhaML.Services
                     client_id = _configuration.GetSection("SuperSecretSettings")["ClientId"],
                     client_secret = _configuration.GetSection("SuperSecretSettings")["ClientSecret"],
                     code,
-                    redirect_uri = _configuration.GetSection("SuperSecretSettings")["RedirectUrl"]
+                    redirect_uri =
+#if DEBUG
+                    "https://localhost:7089/v1/Auth/MlRedirect"
+#else
+                        _configuration.GetSection("SuperSecretSettings")["RedirectUrl"]
+#endif
                 },
                     ContentType.Json);
 
@@ -100,7 +104,7 @@ namespace EspelhaML.Services
 
             if (!response.IsSuccessful)
             {
-                return ((int)response.StatusCode, response.Data ?? null);
+                return ((int)response.StatusCode, response.Data ?? new QuestionRootDto() { Error = response.ErrorMessage });
             }
 
             else
@@ -120,7 +124,28 @@ namespace EspelhaML.Services
 
             if (!response.IsSuccessful)
             {
-                return ((int)response.StatusCode, response.Data ?? null);
+                
+                return ((int)response.StatusCode, response.Data ?? new OrderRootDto { Error = response.ErrorMessage });
+            }
+
+            else
+            {
+                return ((int)response.StatusCode, response.Data);
+            }
+        }
+
+        public async Task<(int status, ShipmentDto? data)> GetShipmentById(string accessToken, string shipmentId)
+        {
+            RestRequest getOrderRequest = new RestRequest($"/shipments/{shipmentId}")
+                    .AddHeader("Authorization", $"Bearer {accessToken}")
+                ;
+
+            RestResponse<ShipmentDto> response = await
+                _mlClient.ExecuteGetAsync<ShipmentDto>(getOrderRequest);
+
+            if (!response.IsSuccessful)
+            {
+                return ((int)response.StatusCode, response.Data ?? new ShipmentDto() { Error = response.ErrorMessage });
             }
 
             else
@@ -139,11 +164,10 @@ namespace EspelhaML.Services
             RestResponse<ItemRootDto> response = await
                 _mlClient.ExecuteGetAsync<ItemRootDto>(getQuestionRequest);
 
-            
 
             if (!response.IsSuccessful)
             {
-                return ((int)response.StatusCode, response.Data ?? null);
+                return ((int)response.StatusCode, response.Data ?? new ItemRootDto() { Error = response.ErrorMessage });
             }
 
             else

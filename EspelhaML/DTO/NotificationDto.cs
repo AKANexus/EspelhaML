@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace EspelhaML.DTO
+namespace MlSuite.MlSynch.DTO
 {
     public class NotificationDto
     {

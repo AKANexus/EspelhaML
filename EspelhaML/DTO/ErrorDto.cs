@@ -1,4 +1,4 @@
-﻿namespace EspelhaML.DTO
+﻿namespace MlSuite.MlSynch.DTO
 {
     public abstract class ErrorDto
     {

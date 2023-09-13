@@ -1,8 +1,7 @@
-﻿using EspelhaML.Domain;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
+﻿using Microsoft.EntityFrameworkCore;
+using MlSuite.Domain;
 
-namespace EspelhaML.EntityFramework
+namespace MlSuite.EntityFramework.EntityFramework
 {
     public class TrilhaDbContext : DbContext
     {
@@ -15,6 +14,26 @@ namespace EspelhaML.EntityFramework
         public TrilhaDbContext(DbContextOptions options) : base(options)
         {
             
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Pedido>()
+                .HasAlternateKey(x => x.Id);
+            modelBuilder.Entity<PedidoEnvio>()
+                .HasAlternateKey(x => x.Id);
+            modelBuilder.Entity<PedidoPagamento>()
+                .HasAlternateKey(x => x.Id);
+            //modelBuilder.Entity<PedidoDestinatário>()
+            //    .HasAlternateKey(x => x.Id);
+            modelBuilder.Entity<Item>()
+                .HasAlternateKey(x => x.Id);
+            modelBuilder.Entity<ItemVariação>()
+                .HasAlternateKey(x => x.Id);
+            modelBuilder.Entity<Question>()
+                .HasAlternateKey(x => x.Id);
+
+            base.OnModelCreating(modelBuilder);
         }
 
         public override int SaveChanges()
@@ -56,49 +75,5 @@ namespace EspelhaML.EntityFramework
 
             return base.SaveChangesAsync(cancellationToken);
         }
-
-        //public override EntityEntry Add(object entity)
-        //{
-        //    if (entity is EntityBase auditableEntity)
-        //    {
-        //        auditableEntity.CreatedAt = DateTime.Now;
-        //        auditableEntity.UpdatedAt = auditableEntity.CreatedAt;
-        //    }
-        //    return base.Add(entity);
-        //}
-
-        //public override EntityEntry<TEntity> Add<TEntity>(TEntity entity)
-        //{
-        //    if (entity is EntityBase auditableEntity)
-        //    {
-        //        auditableEntity.CreatedAt = DateTime.Now;
-        //        auditableEntity.UpdatedAt = auditableEntity.CreatedAt;
-        //    }
-        //    return base.Add(entity);
-        //}
-
-        //public override ValueTask<EntityEntry<TEntity>> AddAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = new CancellationToken())
-        //{
-        //    if (entity is EntityBase auditableEntity)
-        //    {
-        //        auditableEntity.CreatedAt = DateTime.Now;
-        //        auditableEntity.UpdatedAt = auditableEntity.CreatedAt;
-        //    }
-        //    return base.AddAsync(entity, cancellationToken);
-        //}
-
-        //public override EntityEntry<TEntity> Update<TEntity>(TEntity entity)
-        //{
-        //    if (entity is EntityBase auditableEntity)
-        //    {
-        //        if (auditableEntity.CreatedAt == default)
-        //        {
-        //            auditableEntity.CreatedAt = DateTime.Now;
-        //        }
-        //        auditableEntity.UpdatedAt = DateTime.Now;
-        //    }
-        //    return base.Update(entity);
-        //}
-
     }
 }

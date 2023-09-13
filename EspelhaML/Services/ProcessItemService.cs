@@ -1,12 +1,9 @@
-﻿using System.Linq;
-using System.Runtime.InteropServices;
-using System.Security.AccessControl;
-using EspelhaML.Domain;
-using EspelhaML.DTO;
-using EspelhaML.EntityFramework;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using MlSuite.Domain;
+using MlSuite.EntityFramework.EntityFramework;
+using MlSuite.MlSynch.DTO;
 
-namespace EspelhaML.Services
+namespace MlSuite.MlSynch.Services
 {
     public class ProcessItemService
     {

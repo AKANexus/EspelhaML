@@ -1,6 +1,6 @@
-using EspelhaML.EntityFramework;
-using EspelhaML.Services;
 using Microsoft.EntityFrameworkCore;
+using MlSuite.EntityFramework.EntityFramework;
+using MlSuite.MlSynch.Services;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +15,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<MlApiService>();
 builder.Services.AddScoped<ProcessQuestionService>();
 builder.Services.AddScoped<ProcessItemService>();
+builder.Services.AddScoped<ProcessOrderService>();
 
 NpgsqlConnectionStringBuilder csb = new()
 {

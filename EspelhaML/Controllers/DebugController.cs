@@ -1,8 +1,8 @@
-﻿using EspelhaML.Domain;
-using EspelhaML.EntityFramework;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using MlSuite.Domain;
+using MlSuite.EntityFramework.EntityFramework;
 
-namespace EspelhaML.Controllers
+namespace MlSuite.MlSynch.Controllers
 {
     [Route("debug"), ApiController]
     public class DebugController : ControllerBase

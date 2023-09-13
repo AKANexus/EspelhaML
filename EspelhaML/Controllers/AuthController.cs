@@ -1,12 +1,11 @@
-﻿using EspelhaML.Domain;
-using EspelhaML.DTO;
-using EspelhaML.EntityFramework;
-using EspelhaML.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MlSuite.Domain;
+using MlSuite.EntityFramework.EntityFramework;
+using MlSuite.MlSynch.DTO;
+using MlSuite.MlSynch.Services;
 
-namespace EspelhaML.Controllers
+namespace MlSuite.MlSynch.Controllers
 {
     [Route("v1/[controller]"), ApiController]
     public class AuthController : ControllerBase
@@ -38,13 +37,17 @@ namespace EspelhaML.Controllers
                 }
                 else
                 {
-
+                    var meInfo = await mlApiService.GetMeInfo(data.AccessToken!);
+                    if (meInfo.data is null)
+                    {
+                        return BadRequest("Falha ao obter os dados do usuário");
+                    }
                     var context = scopedProvider.GetRequiredService<TrilhaDbContext>();
                     MlUserAuthInfo tentative =
                         (await context.MlUserAuthInfos.FirstOrDefaultAsync(x => x.UserId == data.UserId)
                          ??
                          new MlUserAuthInfo(data.AccessToken!, DateTime.Now.AddSeconds(data.ExpiresIn ?? 21600), (long)data.UserId!,
-                             data.RefreshToken!)
+                             data.RefreshToken!, meInfo.data.Nickname, meInfo.data.Identification.Number)
                         );
 
                     context.MlUserAuthInfos.Update(tentative);

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EspelhaML.Domain
+namespace MlSuite.Domain
 {
     public abstract class EntityBase
     {

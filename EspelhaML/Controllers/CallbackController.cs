@@ -1,20 +1,22 @@
-﻿using EspelhaML.Domain;
-using EspelhaML.DTO;
-using EspelhaML.EntityFramework;
-using EspelhaML.Services;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MlSuite.Domain;
+using MlSuite.EntityFramework.EntityFramework;
+using MlSuite.MlSynch.DTO;
+using MlSuite.MlSynch.Services;
 
-namespace EspelhaML.Controllers
+namespace MlSuite.MlSynch.Controllers
 {
     [Route(""),ApiController]
     public class CallbackController : ControllerBase
     {
-        private readonly IServiceProvider _provider;
+        private readonly IServiceScopeFactory _resolver;
+        //private readonly IServiceProvider _provider;
 
-        public CallbackController(IServiceProvider provider)
+        public CallbackController(IServiceScopeFactory resolver)
         {
-            _provider = provider;
+            _resolver = resolver;
+            //_provider = provider;
             CallbackReceived += async (_, args) => await ProcessCallback(args.NotificationDto);
         }
 
@@ -23,7 +25,7 @@ namespace EspelhaML.Controllers
 
         private async Task<string?> GetAccessTokenByUserId(long userId)
         {
-            IServiceProvider scopedProvider = _provider.CreateScope().ServiceProvider;
+            IServiceProvider scopedProvider = _resolver.CreateScope().ServiceProvider;
             TrilhaDbContext context = scopedProvider.GetRequiredService<TrilhaDbContext>();
             MlApiService mlApi = scopedProvider.GetRequiredService<MlApiService>();
 
@@ -77,9 +79,11 @@ namespace EspelhaML.Controllers
 
         private async Task ProcessCallback(NotificationDto notification)
         {
-            IServiceProvider scopedProvider = _provider.CreateScope().ServiceProvider;
+            //Debug.WriteLine("==========Yellow light!==========");
+            await CallbackSemaphore.semaphore.WaitAsync();
+            //Debug.WriteLine("==========Green light!==========");
+            IServiceProvider scopedProvider = _resolver.CreateScope().ServiceProvider;
             TrilhaDbContext context = scopedProvider.GetRequiredService<TrilhaDbContext>();
-
             string? accessToken = await GetAccessTokenByUserId(notification.UserId);
             if (accessToken == null) return;
             ulong.TryParse(notification.Resource.Split('/').Last(), out var resourceId);
@@ -100,9 +104,16 @@ namespace EspelhaML.Controllers
                     ProcessItemService processItemService = scopedProvider.GetRequiredService<ProcessItemService>();
                     await processItemService.ProcessInfo(notification.Resource.Split('/').Last(), accessToken);
                     break;
+                case "orders_v2":
+                    ProcessOrderService processOrderService = scopedProvider.GetRequiredService<ProcessOrderService>();
+                    await processOrderService.ProcessInfo(resourceId, accessToken);
+                    break;
                 default:
                     break;
             }
+
+            //await Task.Delay(10000);
+            CallbackSemaphore.semaphore.Release();
         }
 
         [HttpPost("MlCallback")]
@@ -111,8 +122,6 @@ namespace EspelhaML.Controllers
             CallbackReceived?.Invoke(this, new CallBackEventArgs(notificationDto));
             return Ok();
         }
-
-
     }
 
     public class CallBackEventArgs : EventArgs

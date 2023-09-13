@@ -1,6 +1,6 @@
-﻿using EspelhaML.Domain.Enums;
+﻿using MlSuite.Domain.Enums;
 
-namespace EspelhaML.Domain
+namespace MlSuite.Domain
 {
     public class Pedido : EntityBase
     {
@@ -10,9 +10,10 @@ namespace EspelhaML.Domain
         public List<PedidoItem> Itens { get; set; } = new();
         public PedidoEnvio? Envio { get; set; }
         public List<PedidoPagamento> Pagamentos { get; set; } = new();
+        public ulong SellerId { get; set; }
     }
 
-    public class PedidoItem
+    public class PedidoItem : EntityBase
     {
         public string Título { get; set; }
         public decimal PreçoUnitário { get; set; }
@@ -22,7 +23,7 @@ namespace EspelhaML.Domain
         public ItemVariação? ItemVariação { get; set; }
     }
 
-    public class PedidoPagamento
+    public class PedidoPagamento : EntityBase
     {
         public ulong Id { get; set; }
         public decimal TotalPago { get; set; }
@@ -33,25 +34,26 @@ namespace EspelhaML.Domain
 
     }
 
-    public class PedidoEnvio
+    public class PedidoEnvio : EntityBase
     {
         public ulong Id { get; set; }
         public ShipmentStatus Status { get; set; }
         public ShipmentSubStatus? SubStatus { get; set; }
-        public string SubStatusDescrição { get; set; }
-        public DateTime CriaçãoDoPedido { get; set; }
-        public decimal ValorDeclarado { get; set; }
-        public decimal Largura { get; set; }
-        public decimal Altura { get; set; }
-        public decimal Comprimento { get; set; }
-        public decimal Peso { get; set; }
-        public string CódRastreamento { get; set; }
-        public PedidoDestinatário Destinatário { get; set; }
+        public string? SubStatusDescrição { get; set; }
+        public DateTime? CriaçãoDoPedido { get; set; }
+        public decimal? ValorDeclarado { get; set; }
+        public decimal? Largura { get; set; }
+        public decimal? Altura { get; set; }
+        public decimal? Comprimento { get; set; }
+        public decimal? Peso { get; set; }
+        public string? CódRastreamento { get; set; }
+        public ShipmentType TipoEnvio { get; set; }
+        public PedidoDestinatário? Destinatário { get; set; }
     }
 
-    public class PedidoDestinatário
+    public class PedidoDestinatário : EntityBase
     {
-        public ulong Id { get; set; }
+        public ulong? Id { get; set; }
         public string Nome { get; set; }
         public string Telefone { get; set; }
         public string Logradouro { get; set; }
@@ -60,7 +62,7 @@ namespace EspelhaML.Domain
         public string Cidade { get; set; }
         public string UF { get; set; }
         public string Bairro { get; set; }
-        public string Distrito { get; set; }
+        public string? Distrito { get; set; }
         public bool ÉResidencial { get; set; }
     }
 }

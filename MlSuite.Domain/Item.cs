@@ -1,4 +1,4 @@
-﻿namespace EspelhaML.Domain
+﻿namespace MlSuite.Domain
 {
     public class Item : EntityBase
     {

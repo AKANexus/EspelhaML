@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace EspelhaML.Migrations
+namespace MlSynch.Migrations
 {
     /// <inheritdoc />
     public partial class Account_Name_Columns : Migration

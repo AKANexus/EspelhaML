@@ -1,7 +1,8 @@
 ﻿using System.Text.Json.Serialization;
+
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-namespace EspelhaML.DTO
+namespace MlSuite.MlSynch.DTO
 {
     public class Attribute
     {
@@ -112,7 +113,7 @@ namespace EspelhaML.DTO
     public class ItemRootDto : ErrorDto
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
         [JsonPropertyName("site_id")]
         public string SiteId { get; set; }
@@ -198,8 +199,8 @@ namespace EspelhaML.DTO
         [JsonPropertyName("non_mercado_pago_payment_methods")]
         public List<object> NonMercadoPagoPaymentMethods { get; set; }
 
-        [JsonPropertyName("shipping")]
-        public OrderShipping Shipping { get; set; }
+        //[JsonPropertyName("shipping")]
+        //public OrderShipping Shipping { get; set; }
 
         [JsonPropertyName("international_delivery_mode")]
         public string InternationalDeliveryMode { get; set; }
@@ -265,7 +266,7 @@ namespace EspelhaML.DTO
         public DateTime? LastUpdated { get; set; }
 
         [JsonPropertyName("health")]
-        public int? Health { get; set; }
+        public double? Health { get; set; }
 
         [JsonPropertyName("catalog_listing")]
         public bool? CatalogListing { get; set; }

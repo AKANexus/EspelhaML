@@ -3,6 +3,7 @@ using System;
 using MlSuite.EntityFramework.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MlSynch.Migrations
 {
     [DbContext(typeof(TrilhaDbContext))]
-    partial class TrilhaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230906211704_AddressIdRemoveAk")]
+    partial class AddressIdRemoveAk
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -284,6 +287,7 @@ namespace MlSynch.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("CódRastreamento")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid?>("DestinatárioUuid")

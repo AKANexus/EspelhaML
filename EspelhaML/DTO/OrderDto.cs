@@ -1,7 +1,8 @@
 ﻿// Root myDeserializedClass = JsonSerializer.Deserialize<Root>(myJsonResponse);
 
 using System.Text.Json.Serialization;
-using EspelhaML.DTO;
+
+namespace MlSuite.MlSynch.DTO;
 
 public class AtmTransferReference
 {
@@ -168,10 +169,10 @@ public class OrderRequest
 public class Payment
 {
     [JsonPropertyName("id")]
-    public long? Id { get; set; }
+    public ulong Id { get; set; }
 
     [JsonPropertyName("order_id")]
-    public long? OrderId { get; set; }
+    public ulong? OrderId { get; set; }
 
     [JsonPropertyName("payer_id")]
     public int? PayerId { get; set; }
@@ -180,7 +181,7 @@ public class Payment
     public Collector Collector { get; set; }
 
     [JsonPropertyName("card_id")]
-    public long? CardId { get; set; }
+    public ulong? CardId { get; set; }
 
     [JsonPropertyName("reason")]
     public string Reason { get; set; }
@@ -348,7 +349,7 @@ public class OrderRootDto : ErrorDto
     public List<Payment> Payments { get; set; }
 
     [JsonPropertyName("shipping")]
-    public Shipping Shipping { get; set; }
+    public Shipping? Shipping { get; set; }
 
     [JsonPropertyName("status")]
     public string Status { get; set; }
@@ -390,13 +391,13 @@ public class OrderRootDto : ErrorDto
 public class Seller
 {
     [JsonPropertyName("id")]
-    public int? Id { get; set; }
+    public ulong Id { get; set; }
 }
 
 public class Shipping
 {
     [JsonPropertyName("id")]
-    public long? Id { get; set; }
+    public ulong? Id { get; set; }
 }
 
 public class Taxes
@@ -425,4 +426,3 @@ public class VariationAttribute
     [JsonPropertyName("value_name")]
     public string ValueName { get; set; }
 }
-

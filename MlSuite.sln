@@ -3,13 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33829.357
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EspelhaML", "EspelhaML\EspelhaML.csproj", "{A478E782-2D54-48A8-A8CD-38C72E841338}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MlSuite.MlSynch", "EspelhaML\MlSuite.MlSynch.csproj", "{A478E782-2D54-48A8-A8CD-38C72E841338}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationTest", "NotificationTest\NotificationTest.csproj", "{4F36C076-414D-4BFF-8676-E15672C06D88}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NotificationTest", "NotificationTest\NotificationTest.csproj", "{4F36C076-414D-4BFF-8676-E15672C06D88}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalRChat", "SignalRChat\SignalRChat.csproj", "{2F6623E6-BA41-427E-B34E-530F6B91CBCA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalRChat", "SignalRChat\SignalRChat.csproj", "{2F6623E6-BA41-427E-B34E-530F6B91CBCA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLPerguntas", "MLPerguntas\MLPerguntas.csproj", "{74607970-1DD5-4CC2-B57A-B5E4EDFAF513}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MlSuite.Domain", "MlSuite.Domain\MlSuite.Domain.csproj", "{084F2DAB-A02E-4F51-BCF7-11801EA0F3E3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MlSuite.EntityFramework", "MlSuite.EntityFramework\MlSuite.EntityFramework.csproj", "{FA520708-79FB-44D4-AC52-CD19F1BCA1DD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +37,14 @@ Global
 		{74607970-1DD5-4CC2-B57A-B5E4EDFAF513}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{74607970-1DD5-4CC2-B57A-B5E4EDFAF513}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{74607970-1DD5-4CC2-B57A-B5E4EDFAF513}.Release|Any CPU.Build.0 = Release|Any CPU
+		{084F2DAB-A02E-4F51-BCF7-11801EA0F3E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{084F2DAB-A02E-4F51-BCF7-11801EA0F3E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{084F2DAB-A02E-4F51-BCF7-11801EA0F3E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{084F2DAB-A02E-4F51-BCF7-11801EA0F3E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA520708-79FB-44D4-AC52-CD19F1BCA1DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA520708-79FB-44D4-AC52-CD19F1BCA1DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA520708-79FB-44D4-AC52-CD19F1BCA1DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA520708-79FB-44D4-AC52-CD19F1BCA1DD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

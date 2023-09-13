@@ -1,8 +1,8 @@
-﻿using EspelhaML.Domain;
-using EspelhaML.EntityFramework;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using MlSuite.Domain;
+using MlSuite.EntityFramework.EntityFramework;
 
-namespace EspelhaML.Services
+namespace MlSuite.MlSynch.Services
 {
     public class ProcessQuestionService
     {
@@ -19,7 +19,7 @@ namespace EspelhaML.Services
             MlApiService mlApi = scopedProvider.GetRequiredService<MlApiService>();
             TrilhaDbContext context = scopedProvider.GetRequiredService<TrilhaDbContext>();
             var questionResponse = await mlApi.GetQuestionById(apiToken, resourceId.ToString());
-            if (questionResponse.data?.Id is null)
+            if (questionResponse.data?.Id is null || questionResponse.data?.Id == 0)
             {
                 context.Logs.Add(new EspelhoLog(nameof(ProcessQuestionService),
                     $"Falha ao obter os dados requisitados: {questionResponse.data?.Error}"));

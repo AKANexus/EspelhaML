@@ -1,8 +1,9 @@
-﻿namespace EspelhaML.Domain.Enums
+﻿namespace MlSuite.Domain.Enums
 {
     public enum OrderStatus
     {
-        Confirmado,
+        Desconhecido = -1,
+        Confirmado = 1,
         PagamentoNecessário,
         PagamentoEmProcesso,
         PagoParcial,

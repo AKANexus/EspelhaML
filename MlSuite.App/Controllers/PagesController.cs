@@ -1,21 +1,25 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MlSuite.App.Models;
 using System.Diagnostics;
+using MlSuite.App.Attributes;
 
 namespace MlSuite.App.Controllers
 {
-    public class HomeController : Controller
+    [Authorise]
+    public class PagesController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly ILogger<PagesController> _logger;
 
-        public HomeController(ILogger<HomeController> logger)
+        public PagesController(ILogger<PagesController> logger)
         {
             _logger = logger;
         }
 
-        public IActionResult Index()
+        
+        public IActionResult Home()
         {
             return View();
+
         }
 
         public IActionResult Privacy()

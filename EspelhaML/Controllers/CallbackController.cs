@@ -23,7 +23,7 @@ namespace MlSuite.MlSynch.Controllers
         private event CallBackEventHandler? CallbackReceived;
         private delegate void CallBackEventHandler(object sender,  CallBackEventArgs args);
 
-        private async Task<string?> GetAccessTokenByUserId(long userId)
+        private async Task<string?> GetAccessTokenByUserId(ulong userId)
         {
             IServiceProvider scopedProvider = _resolver.CreateScope().ServiceProvider;
             TrilhaDbContext context = scopedProvider.GetRequiredService<TrilhaDbContext>();

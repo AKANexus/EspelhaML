@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace MlSuite.MlSynch.DTO
+namespace MlSuite.DTOs
 {
     public class NotificationDto
     {
@@ -9,7 +9,7 @@ namespace MlSuite.MlSynch.DTO
 
         public string Resource { get; set; }
         [JsonPropertyName("user_id")]
-        public long UserId { get; set; }
+        public ulong UserId { get; set; }
         public string Topic { get; set; }
         [JsonPropertyName("application_id")]
         public ulong ApplicationId { get; set; }

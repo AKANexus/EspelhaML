@@ -46,7 +46,7 @@ namespace MlSuite.MlSynch.Controllers
                     MlUserAuthInfo tentative =
                         (await context.MlUserAuthInfos.FirstOrDefaultAsync(x => x.UserId == data.UserId)
                          ??
-                         new MlUserAuthInfo(data.AccessToken!, DateTime.Now.AddSeconds(data.ExpiresIn ?? 21600), (long)data.UserId!,
+                         new MlUserAuthInfo(data.AccessToken!, DateTime.Now.AddSeconds(data.ExpiresIn ?? 21600), (ulong)data.UserId!,
                              data.RefreshToken!, meInfo.data.Nickname, meInfo.data.Identification.Number)
                         );
 

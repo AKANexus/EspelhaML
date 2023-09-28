@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace MlSuite.MlSynch.DTO
+namespace MlSuite.DTOs
 {
     public class QuestionRootDto : ErrorDto
     {

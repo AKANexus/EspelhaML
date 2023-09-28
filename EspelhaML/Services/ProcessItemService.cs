@@ -37,13 +37,17 @@ namespace MlSuite.MlSynch.Services
                     category: itemResponse.data.CategoryId,
                     éVariação: itemResponse.data.Variations.Count > 0,
                     id: itemResponse.data.Id,
-                    sellerId: itemResponse.data.SellerId,
                     preçoVenda: (decimal)itemResponse.data.Price,
                     quantidadeÀVenda: (itemResponse.data.AvailableQuantity ?? 0),
                     permalink: itemResponse.data.Permalink,
                     primeiraFoto: itemResponse.data.Pictures[0].Url,
                     título: itemResponse.data.Title
                 );
+                var seller =
+                    await context.MlUserAuthInfos.FirstOrDefaultAsync(x =>
+                        x.UserId == itemResponse.data.SellerId);
+
+                tentativo.Seller = seller;
                 if (tentativo.ÉVariação)
                 {
                     tentativo.Variações

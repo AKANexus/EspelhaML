@@ -11,6 +11,8 @@ namespace MlSuite.EntityFramework.EntityFramework
         public DbSet<Item> Itens { get; set; } = null!;
         public DbSet<Pedido> Pedidos { get; set; } = null!;
 
+        public DbSet<PromolimitEntry> PromolimitEntries { get; set; } = null!;
+
         public TrilhaDbContext(DbContextOptions options) : base(options)
         {
             
@@ -32,6 +34,12 @@ namespace MlSuite.EntityFramework.EntityFramework
                 .HasAlternateKey(x => x.Id);
             modelBuilder.Entity<Question>()
                 .HasAlternateKey(x => x.Id);
+            modelBuilder.Entity<MlUserAuthInfo>()
+                .HasAlternateKey(x => x.UserId);
+            modelBuilder.Entity<Item>()
+                .HasOne(item => item.Seller)
+                .WithMany();
+                
 
             base.OnModelCreating(modelBuilder);
         }

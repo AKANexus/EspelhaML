@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace MlSuite.MlSynch.DTO
+namespace MlSuite.DTOs
 {
     public class AccessTokenDto
     {
@@ -13,7 +13,7 @@ namespace MlSuite.MlSynch.DTO
         [JsonPropertyName("scope")]
         public string? Scope { get; set; }
         [JsonPropertyName("user_id")]
-        public long? UserId { get; set; }
+        public ulong? UserId { get; set; }
         [JsonPropertyName("refresh_token")]
         public string? RefreshToken { get; set; }
         [JsonPropertyName("error_description")]
@@ -24,7 +24,7 @@ namespace MlSuite.MlSynch.DTO
         public int? Status { get; set; }
         
 
-        public AccessTokenDto(string accessToken, string tokenType, int expiresIn, string scope, long userId,
+        public AccessTokenDto(string accessToken, string tokenType, int expiresIn, string scope, ulong userId,
             string refreshToken)
         {
             AccessToken = accessToken;

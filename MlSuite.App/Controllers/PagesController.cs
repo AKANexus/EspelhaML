@@ -5,7 +5,7 @@ using MlSuite.App.Attributes;
 
 namespace MlSuite.App.Controllers
 {
-    [Authorise]
+    //[Authorise]
     public class PagesController : Controller
     {
         private readonly ILogger<PagesController> _logger;
@@ -16,15 +16,10 @@ namespace MlSuite.App.Controllers
         }
 
         
-        public IActionResult Home()
+        public IActionResult Index()
         {
             return View();
 
-        }
-
-        public IActionResult Privacy()
-        {
-            return View();
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

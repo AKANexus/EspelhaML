@@ -25,6 +25,11 @@
   <ItemGroup>
     <ProjectReference Include="..\MlSuite.Domain\MlSuite.Domain.csproj" />
     <ProjectReference Include="..\MlSuite.EntityFramework\MlSuite.EntityFramework.csproj" />
+    <ProjectReference Include="..\MlSuite.MlApiService\MlSuite.MlApiServiceLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EditorConfigFiles Remove="D:\Codebase\CSharp\Trilha\EspelhaML\EspelhaML\.editorconfig" />
   </ItemGroup>
 
 </Project>

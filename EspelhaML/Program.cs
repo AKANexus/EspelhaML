@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MlSuite.EntityFramework.EntityFramework;
+using MlSuite.MlApiServiceLib;
 using MlSuite.MlSynch.Services;
 using Npgsql;
 
@@ -12,7 +13,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<MlApiService>();
+builder.Services.AddScoped(_ => new MlApiService(
+    builder.Configuration.GetSection("SuperSecretSettings")["ClientId"] ?? throw new NullReferenceException("ClientID não pode ser nulo"),
+    builder.Configuration.GetSection("SuperSecretSettings")["ClientSecret"] ?? throw new NullReferenceException("Client secret não pode ser nulo"),
+    builder.Configuration.GetSection("SuperSecretSettings")["RedirectUrl"] ?? throw new NullReferenceException("Redirect URL não pode ser nulo")
+));
 builder.Services.AddScoped<ProcessQuestionService>();
 builder.Services.AddScoped<ProcessItemService>();
 builder.Services.AddScoped<ProcessOrderService>();
@@ -23,17 +28,20 @@ NpgsqlConnectionStringBuilder csb = new()
     Port = 5351,
     Username = "meliDBA",
     Password = builder.Configuration.GetSection("SuperSecretSettings")["NpgPassword"],
-    #if DEBUG
+#if DEBUG
     Host = "192.168.10.215"
-    #else
+#else
     Host = "tinformatica.dyndns.org"
-    #endif
+#endif
 
 };
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 Action<DbContextOptionsBuilder> configureDbContext = c =>
 {
-    c.UseNpgsql(csb.ConnectionString);
+    c.UseNpgsql(csb.ConnectionString, b =>
+    {
+        b.MigrationsAssembly("MlSuite.MlSynch");
+    });
     c.EnableSensitiveDataLogging(true);
     c.EnableDetailedErrors(true);
 };

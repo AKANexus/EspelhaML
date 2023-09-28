@@ -17,6 +17,7 @@ public static class ServicesBuilders
         builder.Services.AddScoped<EmailService>();
         builder.Services.AddScoped<JwtUtils>();
         builder.Services.AddScoped<VerificationTokenService>();
+        builder.Services.AddScoped<PromolimitDataService>();
         return builder;
     }
 }

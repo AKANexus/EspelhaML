@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MlSuite.EntityFramework.EntityFramework;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MlSynch.Migrations
 {
     [DbContext(typeof(TrilhaDbContext))]
-    partial class TrilhaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230928154504_ItemSellerFk")]
+    partial class ItemSellerFk
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -47,7 +50,7 @@ namespace MlSynch.Migrations
                     b.ToTable("Logs");
                 });
 
-            modelBuilder.Entity("MlSuite.Domain.ParentItem", b =>
+            modelBuilder.Entity("MlSuite.Domain.Item", b =>
                 {
                     b.Property<Guid>("Uuid")
                         .ValueGeneratedOnAdd()
@@ -500,7 +503,7 @@ namespace MlSynch.Migrations
                     b.ToTable("Questions");
                 });
 
-            modelBuilder.Entity("MlSuite.Domain.ParentItem", b =>
+            modelBuilder.Entity("MlSuite.Domain.Item", b =>
                 {
                     b.HasOne("MlSuite.Domain.MlUserAuthInfo", "Seller")
                         .WithMany()
@@ -513,7 +516,7 @@ namespace MlSynch.Migrations
 
             modelBuilder.Entity("MlSuite.Domain.ItemVariação", b =>
                 {
-                    b.HasOne("MlSuite.Domain.ParentItem", null)
+                    b.HasOne("MlSuite.Domain.Item", null)
                         .WithMany("Variações")
                         .HasForeignKey("ItemUuid");
                 });
@@ -538,7 +541,7 @@ namespace MlSynch.Migrations
 
             modelBuilder.Entity("MlSuite.Domain.PedidoItem", b =>
                 {
-                    b.HasOne("MlSuite.Domain.ParentItem", "ParentItem")
+                    b.HasOne("MlSuite.Domain.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemUuid");
 
@@ -550,7 +553,7 @@ namespace MlSynch.Migrations
                         .WithMany("Itens")
                         .HasForeignKey("PedidoUuid");
 
-                    b.Navigation("ParentItem");
+                    b.Navigation("Item");
 
                     b.Navigation("ItemVariação");
                 });
@@ -564,16 +567,16 @@ namespace MlSynch.Migrations
 
             modelBuilder.Entity("MlSuite.Domain.PromolimitEntry", b =>
                 {
-                    b.HasOne("MlSuite.Domain.ParentItem", "ParentItem")
+                    b.HasOne("MlSuite.Domain.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemUuid")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ParentItem");
+                    b.Navigation("Item");
                 });
 
-            modelBuilder.Entity("MlSuite.Domain.ParentItem", b =>
+            modelBuilder.Entity("MlSuite.Domain.Item", b =>
                 {
                     b.Navigation("Variações");
                 });

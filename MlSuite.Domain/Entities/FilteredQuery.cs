@@ -30,4 +30,9 @@ namespace MlSuite.Domain.Entities
         MenorQue,
 
     }
+
+    public class SimpleFilteredQuery : FilteredQuery
+    {
+        public string query { get; set; }
+    }
 }

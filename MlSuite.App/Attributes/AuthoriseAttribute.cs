@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
 using MlSuite.App.DTO;
+using MlSuite.Domain;
 using MlSuite.Domain.Enums;
 
 namespace MlSuite.App.Attributes;

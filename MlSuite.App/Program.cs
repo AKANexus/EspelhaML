@@ -40,7 +40,7 @@ builder.Services.AddSession(opts =>
     opts.Cookie.IsEssential = true;
 });
 
-builder.AddDbContext(builder.Configuration.GetSection("SuperSeecretSettings")["PostgresSqlPassword"]!);
+builder.AddDbContext(builder.Configuration.GetSection("SuperSecretSettings")["PostgresSqlPassword"]!);
 builder.AddDataServices();
 builder.AddServices();
 

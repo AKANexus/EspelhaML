@@ -3,6 +3,7 @@ using MlSuite.App.DTO.Configuration;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using MlSuite.Domain;
 using MlSuite.Domain.Enums;

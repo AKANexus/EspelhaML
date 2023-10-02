@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MlSuite.Domain;
 using MlSuite.Domain.Entities;
 using MlSuite.EntityFramework.EntityFramework;
 
@@ -40,16 +41,16 @@ namespace MlSuite.App.Services
                 .CountAsync();
         }
 
-        public async Task<List<PromolimitEntry>> GetAllProdutosPaged(FilteredQuery filteredQueryModel)
+        public async Task<List<PromolimitEntry>> GetAllProdutosPaged(SimpleFilteredQuery filteredQueryModel)
         {
             using var scope = _scopeFactory.CreateScope();
             var request = scope.ServiceProvider.GetRequiredService<TrilhaDbContext>().PromolimitEntries
                 .Include(x => x.Item)
                     .ThenInclude(y=>y.Seller)
                 .AsNoTracking();
-            if (filteredQueryModel.Filters.Length != 0)
+            if (!string.IsNullOrWhiteSpace(filteredQueryModel.query))
             {
-                request = request.Where(x => x.Item.Id.Contains(filteredQueryModel.Filters[0].Query));
+                request = request.Where(x => x.Item.Id.Contains(filteredQueryModel.query));
             }
 
             return await request

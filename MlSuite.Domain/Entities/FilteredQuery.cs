@@ -10,7 +10,7 @@ namespace MlSuite.Domain.Entities
     {
         public int? offset { get; set; }
         public int? limit { get; set; }
-        public Filter[] Filters { get; set; }
+        public Filter[]? Filters { get; set; }
     }
 
     public class Filter

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MlSuite.Domain;
 using MlSuite.EntityFramework.EntityFramework;
+using MlSuite.MlApiServiceLib;
 
 namespace MlSuite.MlSynch.Services
 {

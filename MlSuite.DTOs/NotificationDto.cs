@@ -6,7 +6,6 @@ namespace MlSuite.DTOs
     {
         [JsonPropertyName("_id")]
         public string Id { get; set; }
-
         public string Resource { get; set; }
         [JsonPropertyName("user_id")]
         public ulong UserId { get; set; }

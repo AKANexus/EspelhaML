@@ -25,7 +25,13 @@ namespace MlSuite.App.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetDataPaged([FromQuery] FilteredQuery? filteredQueryModel)
+        public async Task<IActionResult> Debug([FromQuery]string mensagem)
+        {
+            return Ok(new{retorno = mensagem});
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetDataPaged([FromQuery] SimpleFilteredQuery? filteredQueryModel)
         {
             var scope = _scopeFactory.CreateScope();
             PromolimitDataService promolimitDataService =
@@ -35,7 +41,7 @@ namespace MlSuite.App.Controllers
                 return BadRequest();
             }
 
-            if (filteredQueryModel.Filters.All(x => string.IsNullOrWhiteSpace(x.Field) && string.IsNullOrWhiteSpace(x.Query)))
+            if (filteredQueryModel.Filters is null || filteredQueryModel.Filters.All(x => string.IsNullOrWhiteSpace(x.Field) && string.IsNullOrWhiteSpace(x.Query)))
             {
                 filteredQueryModel.Filters = new Filter[] { };
             }
@@ -49,7 +55,7 @@ namespace MlSuite.App.Controllers
                 {
                     Id = entry.Uuid,
                     Seller = entry.Item.Seller.AccountNickname,
-                    Descricao = entry.Item.Título,
+                    Descricao = entry.Variação != null ? entry.Item.Título + entry.Variação.DescritorVariação : entry.Item.Título,
                     QuantidadeAVenda = entry.QuantidadeAVenda.ToString(),
                     Estoque = entry.Estoque,
                     MLB = entry.Item.Id

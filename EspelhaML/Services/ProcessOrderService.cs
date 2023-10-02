@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MlSuite.Domain;
 using MlSuite.Domain.Enums;
+using MlSuite.DTOs;
 using MlSuite.EntityFramework.EntityFramework;
-using MlSuite.MlSynch.DTO;
+using MlSuite.MlApiServiceLib;
 
 namespace MlSuite.MlSynch.Services
 {

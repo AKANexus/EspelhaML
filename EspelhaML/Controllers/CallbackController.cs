@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MlSuite.Domain;
+using MlSuite.DTOs;
 using MlSuite.EntityFramework.EntityFramework;
-using MlSuite.MlSynch.DTO;
+using MlSuite.MlApiServiceLib;
 using MlSuite.MlSynch.Services;
 
 namespace MlSuite.MlSynch.Controllers

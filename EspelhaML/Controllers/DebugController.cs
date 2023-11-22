@@ -4,7 +4,7 @@ using MlSuite.EntityFramework.EntityFramework;
 
 namespace MlSuite.MlSynch.Controllers
 {
-    [Route("debug"), ApiController]
+    [Route(""), ApiController]
     public class DebugController : ControllerBase
     {
         private readonly IServiceProvider _provider;
@@ -24,5 +24,11 @@ namespace MlSuite.MlSynch.Controllers
             await context.SaveChangesAsync();
             return Ok();
         }
-    }
+
+        [HttpGet("")]
+        public async Task<IActionResult> WriteNewLog()
+        {
+			return Ok("Yes, it is all OK");
+        }
+	}
 }

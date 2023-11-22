@@ -2,7 +2,7 @@
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-namespace MlSuite.DTOs
+namespace MlSuite.MlDTOs
 {
     public class Attribute
     {
@@ -241,6 +241,9 @@ namespace MlSuite.DTOs
         [JsonPropertyName("warranty")]
         public string Warranty { get; set; }
 
+        [JsonPropertyName("seller_custom_field")]
+        public string SellerCustomField { get; set; }
+
         [JsonPropertyName("catalog_product_id")]
         public object CatalogProductId { get; set; }
 
@@ -420,6 +423,9 @@ namespace MlSuite.DTOs
 
         [JsonPropertyName("catalog_product_id")]
         public object CatalogProductId { get; set; }
+
+        [JsonPropertyName("seller_custom_field")]
+        public string SellerCustomField { get; set;}
     }
 
 

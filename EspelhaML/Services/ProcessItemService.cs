@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MlSuite.Domain;
-using MlSuite.DTOs;
+using MlSuite.MlDTOs;
 using MlSuite.EntityFramework.EntityFramework;
 using MlSuite.MlApiServiceLib;
 

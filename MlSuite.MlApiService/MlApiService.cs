@@ -1,8 +1,8 @@
 ﻿using MlSuite.Attributes;
-using MlSuite.DTOs;
+using MlSuite.MlDTOs;
 using RestSharp;
 using System.Diagnostics;
-using Attribute = MlSuite.DTOs.Attribute;
+using Attribute = MlSuite.MlDTOs.Attribute;
 
 namespace MlSuite.MlApiServiceLib
 {

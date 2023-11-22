@@ -1,4 +1,4 @@
-﻿namespace MlSuite.DTOs
+﻿namespace MlSuite.MlDTOs
 {
     public abstract class ErrorDto
     {

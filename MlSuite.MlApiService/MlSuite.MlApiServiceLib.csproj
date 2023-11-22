@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MlSuite.Attributes\MlSuite.Attributes.csproj" />
-    <ProjectReference Include="..\MlSuite.DTOs\MlSuite.DTOs.csproj" />
+    <ProjectReference Include="..\MlSuite.DTOs\MlSuite.MlDTOs.csproj" />
   </ItemGroup>
 
 </Project>

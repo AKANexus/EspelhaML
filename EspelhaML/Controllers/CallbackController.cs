@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MlSuite.Domain;
-using MlSuite.DTOs;
+using MlSuite.MlDTOs;
 using MlSuite.EntityFramework.EntityFramework;
 using MlSuite.MlApiServiceLib;
 using MlSuite.MlSynch.Services;
@@ -80,6 +82,11 @@ namespace MlSuite.MlSynch.Controllers
 
         private async Task ProcessCallback(NotificationDto notification)
         {
+	        using (EventLog el = new EventLog("Application"))
+	        {
+                el.Source = "MlSuite";
+                el.WriteEntry($"Callback Recebido:\n{System.Text.Json.JsonSerializer.Serialize(notification)}", EventLogEntryType.Information);
+            }
             //Debug.WriteLine("==========Yellow light!==========");
             await CallbackSemaphore.semaphore.WaitAsync();
             //Debug.WriteLine("==========Green light!==========");

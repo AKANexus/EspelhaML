@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MlSuite.Domain;
 using MlSuite.Domain.Enums;
-using MlSuite.DTOs;
+using MlSuite.MlDTOs;
 using MlSuite.EntityFramework.EntityFramework;
 using MlSuite.MlApiServiceLib;
 
@@ -35,7 +35,8 @@ namespace MlSuite.MlSynch.Services
                 .Include(x => x.Envio)
                 .ThenInclude(y => y.Destinatário)
                 .Include(x => x.Itens)
-                .ThenInclude(pedidoItem => pedidoItem.Item).ThenInclude(item => item.Variações)
+                .ThenInclude(pedidoItem => pedidoItem.Item).ThenInclude(item => item!.Variações)
+				//De acordo com https://learn.microsoft.com/en-us/ef/core/miscellaneous/nullable-reference-types#navigating-and-including-nullable-relationships
                 .Include(x => x.Pagamentos)
                 .FirstOrDefaultAsync(x => x.Id == orderResponse.data.Id);
 
@@ -138,7 +139,18 @@ namespace MlSuite.MlSynch.Services
                     }
                     else
                     {
-                        tentativo.Envio = new()
+						Pedido? pedidoComEnvioExistente =
+							await context.Pedidos.Include(x => x.Envio)
+								.ThenInclude(y=>y.Destinatário)
+								.FirstOrDefaultAsync(x => x.Envio != null &&
+								                          x.Envio.Id == orderResponse.data.Shipping.Id);
+
+						if (pedidoComEnvioExistente != null)
+						{
+							tentativo.Envio = pedidoComEnvioExistente.Envio;
+						}
+
+						tentativo.Envio??= new()
                         {
                             Id = shippingResponse.data.Id,
                             Status = shippingResponse.data.Status switch
@@ -182,8 +194,8 @@ namespace MlSuite.MlSynch.Services
                             Destinatário = new()
                             {
                                 Id = shippingResponse.data.ReceiverAddress.Id,
-                                Nome = shippingResponse.data.ReceiverAddress.ReceiverName,
-                                Telefone = shippingResponse.data.ReceiverAddress.ReceiverPhone,
+                                Nome = shippingResponse.data.ReceiverAddress.ReceiverName ?? "N/A",
+                                Telefone = shippingResponse.data.ReceiverAddress.ReceiverPhone ?? "N/A",
                                 Logradouro = shippingResponse.data.ReceiverAddress.StreetName,
                                 Número = shippingResponse.data.ReceiverAddress.StreetNumber,
                                 CEP = shippingResponse.data.ReceiverAddress.ZipCode,
@@ -346,6 +358,17 @@ namespace MlSuite.MlSynch.Services
                     }
                     else
                     {
+	                    Pedido? pedidoComEnvioExistente =
+		                    await context.Pedidos.Include(x => x.Envio)
+			                    .ThenInclude(y => y.Destinatário)
+								.FirstOrDefaultAsync(x => x.Envio != null &&
+			                    x.Envio.Id == orderResponse.data.Shipping.Id);
+
+	                    if (pedidoComEnvioExistente != null)
+	                    {
+		                    tentativo.Envio = pedidoComEnvioExistente.Envio;
+	                    }
+
                         if (tentativo.Envio is null)
                         {
                             tentativo.Envio = new()
@@ -382,15 +405,15 @@ namespace MlSuite.MlSynch.Services
                                 {
                                     Id = shippingResponse.data.ReceiverAddress.Id,
                                     Nome = shippingResponse.data.ReceiverAddress.ReceiverName ?? shippingResponse.data.ReceiverAddress?.Agency?.Description ?? "N/A",
-                                    Telefone = shippingResponse.data.ReceiverAddress.ReceiverPhone ?? shippingResponse.data.ReceiverAddress?.Agency?.Phone ?? "XXXX",
-                                    Logradouro = shippingResponse.data.ReceiverAddress.StreetName,
-                                    Número = shippingResponse.data.ReceiverAddress.StreetNumber,
-                                    CEP = shippingResponse.data.ReceiverAddress.ZipCode,
-                                    Cidade = shippingResponse.data.ReceiverAddress.City.Name,
-                                    UF = shippingResponse.data.ReceiverAddress.State.Name,
-                                    Bairro = shippingResponse.data.ReceiverAddress.Neighborhood.Name,
-                                    Distrito = shippingResponse.data.ReceiverAddress.Municipality.Name,
-                                    ÉResidencial = shippingResponse.data.ReceiverAddress.DeliveryPreference == "residential"
+                                    Telefone = shippingResponse.data.ReceiverAddress?.ReceiverPhone ?? shippingResponse.data.ReceiverAddress?.Agency?.Phone ?? "XXXX",
+                                    Logradouro = shippingResponse.data.ReceiverAddress?.StreetName ?? "Desconhecido",
+                                    Número = shippingResponse.data.ReceiverAddress?.StreetNumber ?? "Desconhecido",
+                                    CEP = shippingResponse.data.ReceiverAddress?.ZipCode ?? "Desconhecido",
+                                    Cidade = shippingResponse.data.ReceiverAddress?.City.Name ?? "Desconhecido",
+                                    UF = shippingResponse.data.ReceiverAddress?.State.Name ?? "Desconhecido",
+                                    Bairro = shippingResponse.data.ReceiverAddress?.Neighborhood.Name ?? "Desconhecido",
+                                    Distrito = shippingResponse.data.ReceiverAddress?.Municipality.Name,
+                                    ÉResidencial = shippingResponse.data.ReceiverAddress?.DeliveryPreference == "residential"
                                 }
                             };
                         }
@@ -423,15 +446,15 @@ namespace MlSuite.MlSynch.Services
                             //tentativo.Envio.Peso = shippingResponse.data.Dimensions?.Weight;
                             tentativo.Envio.CódRastreamento = shippingResponse.data.TrackingNumber;
                             tentativo.Envio.Destinatário.Nome = shippingResponse.data.ReceiverAddress.ReceiverName ?? shippingResponse.data.ReceiverAddress?.Agency?.Description ?? "N/A";
-                            tentativo.Envio.Destinatário.Telefone = shippingResponse.data.ReceiverAddress.ReceiverPhone ?? shippingResponse.data.ReceiverAddress?.Agency?.Phone ?? "XXXX";
-                            tentativo.Envio.Destinatário.Logradouro = shippingResponse.data.ReceiverAddress.StreetName;
-                            tentativo.Envio.Destinatário.Número = shippingResponse.data.ReceiverAddress.StreetNumber;
-                            tentativo.Envio.Destinatário.CEP = shippingResponse.data.ReceiverAddress.ZipCode;
-                            tentativo.Envio.Destinatário.Cidade = shippingResponse.data.ReceiverAddress.City.Name;
-                            tentativo.Envio.Destinatário.UF = shippingResponse.data.ReceiverAddress.State.Name;
-                            tentativo.Envio.Destinatário.Bairro = shippingResponse.data.ReceiverAddress.Neighborhood.Name;
-                            tentativo.Envio.Destinatário.Distrito = shippingResponse.data.ReceiverAddress.Municipality.Name;
-                            tentativo.Envio.Destinatário.ÉResidencial = shippingResponse.data.ReceiverAddress.DeliveryPreference ==
+                            tentativo.Envio.Destinatário.Telefone = shippingResponse.data.ReceiverAddress?.ReceiverPhone ?? shippingResponse.data.ReceiverAddress?.Agency?.Phone ?? "XXXX";
+                            tentativo.Envio.Destinatário.Logradouro = shippingResponse.data.ReceiverAddress?.StreetName ?? "Desconhecido";
+                            tentativo.Envio.Destinatário.Número = shippingResponse.data.ReceiverAddress?.StreetNumber ?? "Desconhecido";
+                            tentativo.Envio.Destinatário.CEP = shippingResponse.data.ReceiverAddress?.ZipCode ?? "Desconhecido";
+                            tentativo.Envio.Destinatário.Cidade = shippingResponse.data.ReceiverAddress?.City.Name ?? "Desconhecido";
+                            tentativo.Envio.Destinatário.UF = shippingResponse.data.ReceiverAddress?.State.Name ?? "Desconhecido";
+                            tentativo.Envio.Destinatário.Bairro = shippingResponse.data.ReceiverAddress?.Neighborhood.Name ?? "Desconhecido";
+                            tentativo.Envio.Destinatário.Distrito = shippingResponse.data.ReceiverAddress?.Municipality.Name;
+                            tentativo.Envio.Destinatário.ÉResidencial = shippingResponse.data.ReceiverAddress?.DeliveryPreference ==
                                                                         "residential";
                         }
                     }

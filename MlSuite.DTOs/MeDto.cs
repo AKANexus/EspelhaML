@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace MlSuite.DTOs
+namespace MlSuite.MlDTOs
 {
     // Root myDeserializedClass = JsonSerializer.Deserialize<Root>(myJsonResponse);
     //public class Address

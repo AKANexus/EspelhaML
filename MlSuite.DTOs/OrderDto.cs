@@ -2,7 +2,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace MlSuite.DTOs;
+namespace MlSuite.MlDTOs;
 
 public class AtmTransferReference
 {

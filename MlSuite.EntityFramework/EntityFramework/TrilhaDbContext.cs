@@ -6,11 +6,13 @@ namespace MlSuite.EntityFramework.EntityFramework
     public class TrilhaDbContext : DbContext
     {
         public DbSet<MlUserAuthInfo> MlUserAuthInfos { get; set; } = null!;
+        public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
         public DbSet<EspelhoLog> Logs { get; set; } = null!;
         public DbSet<Question> Questions { get; set; } = null!;
         public DbSet<Item> Itens { get; set; } = null!;
         public DbSet<Pedido> Pedidos { get; set; } = null!;
-
+        public DbSet<UserInfo> Usuários { get; set; } = null!;
+        public DbSet<Separação> Separações { get; set; } = null!;
         public DbSet<PromolimitEntry> PromolimitEntries { get; set; } = null!;
 
         public TrilhaDbContext(DbContextOptions options) : base(options)
@@ -39,6 +41,10 @@ namespace MlSuite.EntityFramework.EntityFramework
             modelBuilder.Entity<Item>()
                 .HasOne(item => item.Seller)
                 .WithMany();
+            modelBuilder.Entity<Pedido>()
+	            .HasOne(x => x.Separação)
+	            .WithOne(y => y.Pedido)
+	            .HasForeignKey<Separação>(y => y.PedidoId);
                 
 
             base.OnModelCreating(modelBuilder);

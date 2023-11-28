@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MlSuite.EntityFramework.EntityFramework;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MlSynch.Migrations
 {
     [DbContext(typeof(TrilhaDbContext))]
-    partial class TrilhaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231122190447_SkuColumn")]
+    partial class SkuColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -357,9 +360,6 @@ namespace MlSynch.Migrations
                     b.Property<int>("QuantidadeVendida")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("SeparaçãoUuid")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Sku")
                         .IsRequired()
                         .HasColumnType("text");
@@ -378,8 +378,6 @@ namespace MlSynch.Migrations
                     b.HasIndex("ItemVariaçãoUuid");
 
                     b.HasIndex("PedidoUuid");
-
-                    b.HasIndex("SeparaçãoUuid");
 
                     b.ToTable("PedidoItem");
                 });
@@ -514,146 +512,6 @@ namespace MlSynch.Migrations
                     b.ToTable("Questions");
                 });
 
-            modelBuilder.Entity("MlSuite.Domain.RefreshToken", b =>
-                {
-                    b.Property<Guid>("Uuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("CreatorIp")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("Expires")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("ReasonRevoked")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ReplacedByToken")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("Revoked")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("RevokerIp")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid>("UserInfoUuid")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Uuid");
-
-                    b.HasIndex("UserInfoUuid");
-
-                    b.ToTable("RefreshTokens");
-                });
-
-            modelBuilder.Entity("MlSuite.Domain.Separação", b =>
-                {
-                    b.Property<Guid>("Uuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Etiqueta")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("Fim")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<DateTime>("Início")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid>("PedidoId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid>("UsuárioUuid")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Uuid");
-
-                    b.HasIndex("PedidoId")
-                        .IsUnique();
-
-                    b.HasIndex("UsuárioUuid");
-
-                    b.ToTable("Separações");
-                });
-
-            modelBuilder.Entity("MlSuite.Domain.SeparaçãoItem", b =>
-                {
-                    b.Property<Guid>("Uuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<int>("Separados")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.HasKey("Uuid");
-
-                    b.ToTable("SeparaçãoItem");
-                });
-
-            modelBuilder.Entity("MlSuite.Domain.UserInfo", b =>
-                {
-                    b.Property<Guid>("Uuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("DisplayName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Password")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("Status")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("VerificationToken")
-                        .HasColumnType("text");
-
-                    b.HasKey("Uuid");
-
-                    b.ToTable("Usuários");
-                });
-
             modelBuilder.Entity("MlSuite.Domain.Item", b =>
                 {
                     b.HasOne("MlSuite.Domain.MlUserAuthInfo", "Seller")
@@ -704,15 +562,9 @@ namespace MlSynch.Migrations
                         .WithMany("Itens")
                         .HasForeignKey("PedidoUuid");
 
-                    b.HasOne("MlSuite.Domain.SeparaçãoItem", "Separação")
-                        .WithMany()
-                        .HasForeignKey("SeparaçãoUuid");
-
                     b.Navigation("Item");
 
                     b.Navigation("ItemVariação");
-
-                    b.Navigation("Separação");
                 });
 
             modelBuilder.Entity("MlSuite.Domain.PedidoPagamento", b =>
@@ -739,36 +591,6 @@ namespace MlSynch.Migrations
                     b.Navigation("Variação");
                 });
 
-            modelBuilder.Entity("MlSuite.Domain.RefreshToken", b =>
-                {
-                    b.HasOne("MlSuite.Domain.UserInfo", "UserInfo")
-                        .WithMany()
-                        .HasForeignKey("UserInfoUuid")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("UserInfo");
-                });
-
-            modelBuilder.Entity("MlSuite.Domain.Separação", b =>
-                {
-                    b.HasOne("MlSuite.Domain.Pedido", "Pedido")
-                        .WithOne("Separação")
-                        .HasForeignKey("MlSuite.Domain.Separação", "PedidoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MlSuite.Domain.UserInfo", "Usuário")
-                        .WithMany()
-                        .HasForeignKey("UsuárioUuid")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Pedido");
-
-                    b.Navigation("Usuário");
-                });
-
             modelBuilder.Entity("MlSuite.Domain.Item", b =>
                 {
                     b.Navigation("Variações");
@@ -779,8 +601,6 @@ namespace MlSynch.Migrations
                     b.Navigation("Itens");
 
                     b.Navigation("Pagamentos");
-
-                    b.Navigation("Separação");
                 });
 #pragma warning restore 612, 618
         }

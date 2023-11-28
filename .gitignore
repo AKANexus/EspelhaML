@@ -367,3 +367,4 @@ FodyWeavers.xsd
 /NotificationTest/NotificationTest.csproj
 /SignalRChat/appsettings.json
 /MlSuite.App/appsettings.json
+/MlSuite.Api/Secrets.cs

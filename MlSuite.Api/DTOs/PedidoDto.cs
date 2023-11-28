@@ -8,6 +8,8 @@ namespace MlSuite.Api.DTOs
 		public List<PedidoItemDto> PedidoItems { get; set; }
 		[JsonPropertyName("num_pedido")]
 		public ulong NúmPedido { get; set; }
+		[JsonPropertyName("separado_por")] 
+		public string SeparadoPor { get; set; }
 	}
 
 	public class PedidoItemDto
@@ -18,7 +20,9 @@ namespace MlSuite.Api.DTOs
 		public string Descrição { get; set; }
 		[JsonPropertyName("quantidade")]
 		public int Quantidade { get; set; }
-		[JsonPropertyName("cod_barras")]
-		public string CódigoBarras { get; set; }
+		[JsonPropertyName("sku")]
+		public string Sku { get; set; }
+		[JsonPropertyName("separados")] 
+		public int Separados { get; set; }
 	}
 }

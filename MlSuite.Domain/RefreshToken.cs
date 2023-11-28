@@ -2,7 +2,7 @@
 
 public class RefreshToken : EntityBase
 {
-    public AccountBase AccountBase { get; set; }
+    public UserInfo UserInfo { get; set; }
     public string Token { get; set; }
     public DateTime Expires { get; set; }
     public string CreatorIp { get; set; }

@@ -110,7 +110,8 @@ namespace MlSuite.MlSynch.Services
                             DescritorVariação = string.Join(' ', orderItem.Item.VariationAttributes.Select(y => $"{y.Name}: {y.ValueName}")),
                             PreçoUnitário = (decimal)(orderItem.UnitPrice ?? 0),
                             QuantidadeVendida = (orderItem.Quantity ?? 0),
-                            Título = orderItem.Item.Title
+                            Título = orderItem.Item.Title,
+                            Sku = orderItem.Item.SellerSku ?? "N/A"
                         });
 
                     }
@@ -201,7 +202,7 @@ namespace MlSuite.MlSynch.Services
                                 CEP = shippingResponse.data.ReceiverAddress.ZipCode,
                                 Cidade = shippingResponse.data.ReceiverAddress.City.Name,
                                 UF = shippingResponse.data.ReceiverAddress.State.Name,
-                                Bairro = shippingResponse.data.ReceiverAddress.Neighborhood.Name,
+                                Bairro = shippingResponse.data.ReceiverAddress.Neighborhood?.Name ?? "Desconhecido",
                                 Distrito = shippingResponse.data.ReceiverAddress.Municipality?.Name,
                                 ÉResidencial = shippingResponse.data.ReceiverAddress.DeliveryPreference == "residential"
                             }
@@ -279,7 +280,8 @@ namespace MlSuite.MlSynch.Services
                                     DescritorVariação = string.Join(' ', orderItem.Item.VariationAttributes.Select(y => $"{y.Name}: {y.ValueName}")),
                                     PreçoUnitário = (decimal)(orderItem.UnitPrice ?? 0),
                                     QuantidadeVendida = (orderItem.Quantity ?? 0),
-                                    Título = orderItem.Item.Title
+                                    Título = orderItem.Item.Title,
+                                    Sku = orderItem.Item.SellerSku ?? "N/A"
                                 });
                             }
                         }
@@ -297,6 +299,7 @@ namespace MlSuite.MlSynch.Services
                         pedidoItem.PreçoUnitário = (decimal)(orderItem.UnitPrice ?? 0);
                         pedidoItem.QuantidadeVendida = (orderItem.Quantity ?? 0);
                         pedidoItem.Título = orderItem.Item.Title;
+                        pedidoItem.Sku = orderItem.Item.SellerSku ?? "N/A";
                         pedidoItem.DescritorVariação = string.Join(' ',
                             orderItem.Item.VariationAttributes.Select(y => $"{y.Name}: {y.ValueName}"));
                         if (pedidoItem.Item?.Id != orderItem.Item?.Id && orderItem.Item is not null)
@@ -411,7 +414,7 @@ namespace MlSuite.MlSynch.Services
                                     CEP = shippingResponse.data.ReceiverAddress?.ZipCode ?? "Desconhecido",
                                     Cidade = shippingResponse.data.ReceiverAddress?.City.Name ?? "Desconhecido",
                                     UF = shippingResponse.data.ReceiverAddress?.State.Name ?? "Desconhecido",
-                                    Bairro = shippingResponse.data.ReceiverAddress?.Neighborhood.Name ?? "Desconhecido",
+                                    Bairro = shippingResponse.data.ReceiverAddress?.Neighborhood?.Name ?? "Desconhecido",
                                     Distrito = shippingResponse.data.ReceiverAddress?.Municipality.Name,
                                     ÉResidencial = shippingResponse.data.ReceiverAddress?.DeliveryPreference == "residential"
                                 }
@@ -452,7 +455,7 @@ namespace MlSuite.MlSynch.Services
                             tentativo.Envio.Destinatário.CEP = shippingResponse.data.ReceiverAddress?.ZipCode ?? "Desconhecido";
                             tentativo.Envio.Destinatário.Cidade = shippingResponse.data.ReceiverAddress?.City.Name ?? "Desconhecido";
                             tentativo.Envio.Destinatário.UF = shippingResponse.data.ReceiverAddress?.State.Name ?? "Desconhecido";
-                            tentativo.Envio.Destinatário.Bairro = shippingResponse.data.ReceiverAddress?.Neighborhood.Name ?? "Desconhecido";
+                            tentativo.Envio.Destinatário.Bairro = shippingResponse.data.ReceiverAddress?.Neighborhood?.Name ?? "Desconhecido";
                             tentativo.Envio.Destinatário.Distrito = shippingResponse.data.ReceiverAddress?.Municipality.Name;
                             tentativo.Envio.Destinatário.ÉResidencial = shippingResponse.data.ReceiverAddress?.DeliveryPreference ==
                                                                         "residential";

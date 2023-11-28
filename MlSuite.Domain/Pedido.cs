@@ -11,6 +11,7 @@ namespace MlSuite.Domain
         public PedidoEnvio? Envio { get; set; }
         public List<PedidoPagamento> Pagamentos { get; set; } = new();
         public ulong SellerId { get; set; }
+        public Separação? Separação { get; set; }
     }
 
     public class PedidoItem : EntityBase
@@ -21,6 +22,8 @@ namespace MlSuite.Domain
         public Item? Item { get; set; }
         public string DescritorVariação { get; set; }
         public ItemVariação? ItemVariação { get; set; }
+        public string Sku { get; set; } = "N/A";
+        public SeparaçãoItem? Separação { get; set; }
     }
 
     public class PedidoPagamento : EntityBase

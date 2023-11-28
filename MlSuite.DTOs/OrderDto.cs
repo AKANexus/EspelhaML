@@ -100,7 +100,7 @@ public class OrderOrderItem
     public string Condition { get; set; }
 
     [JsonPropertyName("seller_sku")]
-    public string SellerSku { get; set; }
+    public string? SellerSku { get; set; }
 
     [JsonPropertyName("global_price")]
     public object GlobalPrice { get; set; }

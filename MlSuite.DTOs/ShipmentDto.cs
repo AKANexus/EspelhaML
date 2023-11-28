@@ -207,7 +207,7 @@ namespace MlSuite.MlDTOs
         public State State { get; set; }
 
         [JsonPropertyName("neighborhood")]
-        public Neighborhood Neighborhood { get; set; }
+        public Neighborhood? Neighborhood { get; set; }
 
         [JsonPropertyName("geolocation_last_updated")]
         public DateTime? GeolocationLastUpdated { get; set; }

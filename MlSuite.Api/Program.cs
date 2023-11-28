@@ -1,4 +1,9 @@
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using MlSuite.Api;
+using MlSuite.Api.Middlewares;
+using MlSuite.Api.Services;
+using MlSuite.Domain;
 using MlSuite.EntityFramework.EntityFramework;
 using Npgsql;
 
@@ -36,6 +41,9 @@ Action<DbContextOptionsBuilder> configureDbContext = c =>
 };
 
 builder.Services.AddDbContext<TrilhaDbContext>(configureDbContext);
+builder.Services.AddScoped<RefreshTokenGenerator>();
+builder.Services.AddScoped<JwtUtils>();
+builder.Services.AddScoped<EmailService>();
 
 
 var app = builder.Build();
@@ -49,7 +57,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+//app.UseAuthorization();
+
+app.UseMiddleware<JwtMware>();
 
 app.MapControllers();
 

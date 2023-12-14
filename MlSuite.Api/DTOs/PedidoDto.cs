@@ -9,7 +9,7 @@ namespace MlSuite.Api.DTOs
 		[JsonPropertyName("num_pedido")]
 		public ulong NúmPedido { get; set; }
 		[JsonPropertyName("separado_por")] 
-		public string SeparadoPor { get; set; }
+		public string? SeparadoPor { get; set; }
 	}
 
 	public class PedidoItemDto

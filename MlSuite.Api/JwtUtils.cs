@@ -44,7 +44,7 @@ namespace MlSuite.Api
 			return tokenHandler.WriteToken(token);
 		}
 
-		public async Task<(UserInfo? userInfo, DateTime? expiryDate, Exception? except)> ValidateJwt(string token)
+		public async Task<(UserInfo? userInfo, DateTime? expiryDate, Exception? except)> ValidateJwtAsync(string token)
 		{
 			JwtSecurityTokenHandler tokenHandler = new();
 			byte[] key = Encoding.UTF32.GetBytes(Secrets.JwtSecret);

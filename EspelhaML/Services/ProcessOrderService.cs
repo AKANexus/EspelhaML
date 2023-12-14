@@ -82,7 +82,7 @@ namespace MlSuite.MlSynch.Services
                                 éVariação: itemResponse.data.Variations.Count > 0,
                                 id: itemResponse.data.Id,
                                 preçoVenda: (decimal)itemResponse.data.Price,
-                                quantidadeÀVenda: (itemResponse.data.AvailableQuantity ?? 0),
+                                quantidadeÀVenda: itemResponse.data.AvailableQuantity ?? 0,
                                 permalink: itemResponse.data.Permalink,
                                 primeiraFoto: itemResponse.data.Pictures[0].Url,
                                 título: itemResponse.data.Title
@@ -109,7 +109,7 @@ namespace MlSuite.MlSynch.Services
                             ItemVariação = itemTentativo.Variações.FirstOrDefault(x => x.Id == orderItem.Item.VariationId),
                             DescritorVariação = string.Join(' ', orderItem.Item.VariationAttributes.Select(y => $"{y.Name}: {y.ValueName}")),
                             PreçoUnitário = (decimal)(orderItem.UnitPrice ?? 0),
-                            QuantidadeVendida = (orderItem.Quantity ?? 0),
+                            QuantidadeVendida = orderItem.Quantity ?? 0,
                             Título = orderItem.Item.Title,
                             Sku = orderItem.Item.SellerSku ?? "N/A"
                         });
@@ -158,7 +158,7 @@ namespace MlSuite.MlSynch.Services
                             {
                                 "pending" => ShipmentStatus.Pendente,
                                 "handling" => ShipmentStatus.FretePago,
-                                "ready_to_ship" => ShipmentStatus.Autorizado,
+                                "ready_to_ship" => ShipmentStatus.ProntoParaEnvio,
                                 "shipped" => ShipmentStatus.Enviado,
                                 "delivered" => ShipmentStatus.Entregue,
                                 "not_delivered" => ShipmentStatus.NãoEntregue,
@@ -167,6 +167,8 @@ namespace MlSuite.MlSynch.Services
                             },
                             SubStatus = shippingResponse.data.Substatus switch
                             {
+                                "ready_to_print" => ShipmentSubStatus.ProntoParaImpressão,
+                                "ready_for_pickup" => ShipmentSubStatus.ProntoParaColeta,
                                 "picked_up" => ShipmentSubStatus.Coletado,
                                 "authorized_by_carrier" => ShipmentSubStatus.AutorizadoPelaTransportadora,
                                 "in_hub" => ShipmentSubStatus.NoHub,
@@ -251,7 +253,7 @@ namespace MlSuite.MlSynch.Services
                                     éVariação: itemResponse.data.Variations.Count > 0,
                                     id: itemResponse.data.Id,
                                     preçoVenda: (decimal)itemResponse.data.Price,
-                                    quantidadeÀVenda: (itemResponse.data.AvailableQuantity ?? 0),
+                                    quantidadeÀVenda: itemResponse.data.AvailableQuantity ?? 0,
                                     permalink: itemResponse.data.Permalink,
                                     primeiraFoto: itemResponse.data.Pictures[0].Url,
                                     título: itemResponse.data.Title
@@ -279,7 +281,7 @@ namespace MlSuite.MlSynch.Services
                                     ItemVariação = itemTentativo.Variações.FirstOrDefault(x => x.Id == orderItem.Item.VariationId),
                                     DescritorVariação = string.Join(' ', orderItem.Item.VariationAttributes.Select(y => $"{y.Name}: {y.ValueName}")),
                                     PreçoUnitário = (decimal)(orderItem.UnitPrice ?? 0),
-                                    QuantidadeVendida = (orderItem.Quantity ?? 0),
+                                    QuantidadeVendida = orderItem.Quantity ?? 0,
                                     Título = orderItem.Item.Title,
                                     Sku = orderItem.Item.SellerSku ?? "N/A"
                                 });
@@ -297,7 +299,7 @@ namespace MlSuite.MlSynch.Services
                     {
                         OrderItem orderItem = orderResponse.data.OrderItems.First(x => x.Item.Id == pedidoItem.Item?.Id);
                         pedidoItem.PreçoUnitário = (decimal)(orderItem.UnitPrice ?? 0);
-                        pedidoItem.QuantidadeVendida = (orderItem.Quantity ?? 0);
+                        pedidoItem.QuantidadeVendida = orderItem.Quantity ?? 0;
                         pedidoItem.Título = orderItem.Item.Title;
                         pedidoItem.Sku = orderItem.Item.SellerSku ?? "N/A";
                         pedidoItem.DescritorVariação = string.Join(' ',
@@ -320,7 +322,7 @@ namespace MlSuite.MlSynch.Services
                     {
                         if (tentativo.Pagamentos.All(y => y.Id != payment.Id))
                         {
-                            tentativo.Pagamentos.Add((new()
+                            tentativo.Pagamentos.Add(new()
                             {
                                 Id = payment.Id,
                                 Parcelas = payment.Installments ?? 1,
@@ -328,7 +330,7 @@ namespace MlSuite.MlSynch.Services
                                 ValorFrete = (decimal)(payment.ShippingCost ?? 0),
                                 ValorRessarcido = (decimal)(payment.TransactionAmountRefunded ?? 0),
                                 ValorTransação = (decimal)(payment.TransactionAmount ?? 0)
-                            }));
+                            });
                         }
                     }
 
@@ -381,7 +383,7 @@ namespace MlSuite.MlSynch.Services
                                 {
                                     "pending" => ShipmentStatus.Pendente,
                                     "handling" => ShipmentStatus.FretePago,
-                                    "ready_to_ship" => ShipmentStatus.Autorizado,
+                                    "ready_to_ship" => ShipmentStatus.ProntoParaEnvio,
                                     "shipped" => ShipmentStatus.Enviado,
                                     "delivered" => ShipmentStatus.Entregue,
                                     "not_delivered" => ShipmentStatus.NãoEntregue,
@@ -426,7 +428,7 @@ namespace MlSuite.MlSynch.Services
                             {
                                 "pending" => ShipmentStatus.Pendente,
                                 "handling" => ShipmentStatus.FretePago,
-                                "ready_to_ship" => ShipmentStatus.Autorizado,
+                                "ready_to_ship" => ShipmentStatus.ProntoParaEnvio,
                                 "shipped" => ShipmentStatus.Enviado,
                                 "delivered" => ShipmentStatus.Entregue,
                                 "not_delivered" => ShipmentStatus.NãoEntregue,

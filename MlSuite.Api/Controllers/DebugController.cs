@@ -3,15 +3,13 @@ using MlSuite.Api.DTOs;
 
 namespace MlSuite.Api.Controllers
 {
-	[Route("debug")]
+	[Route("")]
 	public class DebugController : Controller
 	{
-		[HttpGet("index")]
+		[HttpGet("")]
 		public IActionResult Index()
 		{
-			var cookie1 = Request.Cookies["cookie1"];
-			var cookie2 = Request.Cookies["cookie2"];
-			return Ok();
+			return Ok("I'm alive.");
 		}
 
 		[HttpGet("givemeacookie")]
@@ -31,21 +29,22 @@ namespace MlSuite.Api.Controllers
 		}
 
         [HttpPost("fakeLogin")]
-        public IActionResult Login(LoginDto dto)
+        public IActionResult Login([FromBody] LoginDto dto)
         {
+
             if (dto == null)
             {
-                return BadRequest(new RetornoDto("Falha ao fazer login", "Informações inválidas"));
+                return BadRequest(new RetornoDto("Informações inválidas"));
             }
 
             if (dto.Username == null || dto.Password == null)
             {
-                return BadRequest(new RetornoDto("Falha ao fazer login", "Informações incompletas"));
+                return BadRequest(new RetornoDto("Informações incompletas"));
             }
-			HttpContext.Response.Cookies.Append("cookie_de_login", Guid.NewGuid().ToString(), new CookieOptions()
+			Response.Cookies.Append("cookie_de_login", Guid.NewGuid().ToString(), new CookieOptions()
             {
-				HttpOnly = true,
-				Expires = DateTime.UtcNow.AddMinutes(5),
+				HttpOnly = false,
+				Expires = DateTime.UtcNow.AddHours(5),
             });
             return Ok();
         }

@@ -33,7 +33,7 @@ namespace MlSuite.MlSynch.Controllers
             MlApiService mlApi = scopedProvider.GetRequiredService<MlApiService>();
 
             MlUserAuthInfo? accessToken =
-                (await context.MlUserAuthInfos.FirstOrDefaultAsync(x => x.UserId == userId));
+                await context.MlUserAuthInfos.FirstOrDefaultAsync(x => x.UserId == userId);
             if (accessToken == null)
             {
                 context.Logs.Add(new EspelhoLog(nameof(GetAccessTokenByUserId), $"A access token do userId {userId} não pôde ser obtida."));
@@ -115,6 +115,10 @@ namespace MlSuite.MlSynch.Controllers
                 case "orders_v2":
                     ProcessOrderService processOrderService = scopedProvider.GetRequiredService<ProcessOrderService>();
                     await processOrderService.ProcessInfo(resourceId, accessToken);
+                    break;
+                case "shipments":
+                    ProcessShipmentService processShipmentService = scopedProvider.GetRequiredService<ProcessShipmentService>();
+                    await processShipmentService.ProcessInfo(resourceId, accessToken);
                     break;
                 default:
                     break;

@@ -2,6 +2,7 @@
 using MlSuite.MlDTOs;
 using RestSharp;
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 using Attribute = MlSuite.MlDTOs.Attribute;
 
 namespace MlSuite.MlApiServiceLib
@@ -214,6 +215,40 @@ namespace MlSuite.MlApiServiceLib
             }
         }
 
+        /// <summary>
+        /// XXXX
+        /// </summary>
+        /// <param name="accessToken">Access token de autenticação</param>
+        /// <param name="shipmentId">ZZZZ</param>
+        /// <returns>YYYY</returns>
+        public async Task<(int status, byte[]? data, string? message)> GetLabelByShipment(string accessToken, string shipmentId)
+        {
+
+            RestRequest getQuestionRequest = new RestRequest($"/shipment_labels")
+                    .AddHeader("Authorization", $"Bearer {accessToken}")
+                    .AddQueryParameter("shipment_ids", shipmentId)
+                    .AddQueryParameter("response_type", "zpl2") //default parameter
+                //.AddQueryParameter("api_version", "4")
+                ;
+
+            RestResponse response = await
+                _mlClient.ExecuteGetAsync(getQuestionRequest);
+
+
+            if (!response.IsSuccessful)
+            {
+                ShipmentResponseDto? retorno =
+                    System.Text.Json.JsonSerializer.Deserialize<ShipmentResponseDto>(response?.Content ?? "");
+                
+                return ((int?)response?.StatusCode ?? 500, null, retorno?.FailedShipments[0].Message ?? "Erro genérico");
+            }
+
+            else
+            {
+                return ((int)response.StatusCode, response.RawBytes, null);
+            }
+        }
+
         public async Task<(int status, ItemRootDto? data)> _PostItem(string accessToken, ItemRootDto item)
         {
             throw new NotImplementedException();
@@ -268,4 +303,35 @@ namespace MlSuite.MlApiServiceLib
         }
 
     }
+
+    public class ShipmentResponseDto
+    {
+        [JsonPropertyName("failed_shipments")]
+        public List<FailedShipment> FailedShipments { get; set; }
+
+        [JsonPropertyName("status")]
+        public int Status { get; set; }
+
+        [JsonPropertyName("message")]
+        public string Message { get; set; }
+    }
+
+    public class FailedShipment
+    {
+        [JsonPropertyName("shipment_id")]
+        public string ShipmentId { get; set; }
+
+        [JsonPropertyName("order_id")]
+        public long OrderId { get; set; }
+        [JsonPropertyName("message")]
+        public string Message { get; set; }
+
+        [JsonPropertyName("error_code")]
+        public string ErrorCode { get; set; }
+        [JsonPropertyName("status")]
+        public int Status { get; set; }
+        [JsonPropertyName("retry")]
+        public bool Retry { get; set; }
+    }
+
 }

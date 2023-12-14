@@ -23,6 +23,13 @@ namespace MlSuite.Api.Services
 		public async Task<(string rt, DateTime expiryDateTime)> GenerateNewRefreshToken(Guid userGuid, string ipAddress)
 		{
 			var dbContext = _scopeFactory.CreateScope().ServiceProvider.GetRequiredService<TrilhaDbContext>();
+            var userTentativo = await dbContext.Usuários.FirstOrDefaultAsync(x => x.Uuid == userGuid);
+
+            if (userTentativo == null)
+            {
+                throw new Exception();
+            }
+
 			RefreshToken newRefreshToken = new RefreshToken()
 			{
 				Token = Convert.ToHexString(RandomNumberGenerator.GetBytes(64)),
@@ -35,7 +42,7 @@ namespace MlSuite.Api.Services
 			}
 			foreach (RefreshToken refreshToken in 
 			         await dbContext.RefreshTokens.Include(y=>y.UserInfo)
-				         .Where(x=>x.UserInfo.Uuid == userGuid && x.IsActive).ToListAsync())
+				         .Where(x=>x.UserInfo.Uuid == userGuid && x.Revoked == null && !(DateTime.UtcNow >= x.Expires)).ToListAsync())
 			{
 				refreshToken.Revoked = DateTime.UtcNow;
 				refreshToken.ReasonRevoked = "New token generated.";
@@ -44,6 +51,7 @@ namespace MlSuite.Api.Services
 				dbContext.Update(refreshToken);
 			}
 
+            newRefreshToken.UserInfo = userTentativo;
 			dbContext.Add(newRefreshToken);
 			await dbContext.SaveChangesAsync();
 			return (newRefreshToken.Token, newRefreshToken.Expires);

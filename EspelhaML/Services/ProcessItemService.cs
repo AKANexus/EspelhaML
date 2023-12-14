@@ -39,7 +39,7 @@ namespace MlSuite.MlSynch.Services
                     éVariação: itemResponse.data.Variations.Count > 0,
                     id: itemResponse.data.Id,
                     preçoVenda: (decimal)itemResponse.data.Price,
-                    quantidadeÀVenda: (itemResponse.data.AvailableQuantity ?? 0),
+                    quantidadeÀVenda: itemResponse.data.AvailableQuantity ?? 0,
                     permalink: itemResponse.data.Permalink,
                     primeiraFoto: itemResponse.data.Pictures[0].Url,
                     título: itemResponse.data.Title
@@ -63,7 +63,7 @@ namespace MlSuite.MlSynch.Services
                 tentativo.Título = itemResponse.data.Title;
                 tentativo.Category = itemResponse.data.CategoryId;
                 tentativo.PreçoVenda = (decimal)itemResponse.data.Price;
-                tentativo.QuantidadeÀVenda = (itemResponse.data.AvailableQuantity ?? 0);
+                tentativo.QuantidadeÀVenda = itemResponse.data.AvailableQuantity ?? 0;
                 tentativo.PrimeiraFoto = itemResponse.data.Pictures[0].Url;
                 tentativo.ÉVariação = itemResponse.data.Variations.Count > 0;
 

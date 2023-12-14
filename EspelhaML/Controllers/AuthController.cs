@@ -45,11 +45,10 @@ namespace MlSuite.MlSynch.Controllers
                     }
                     var context = scopedProvider.GetRequiredService<TrilhaDbContext>();
                     MlUserAuthInfo tentative =
-                        (await context.MlUserAuthInfos.FirstOrDefaultAsync(x => x.UserId == data.UserId)
-                         ??
-                         new MlUserAuthInfo(data.AccessToken!, DateTime.Now.AddSeconds(data.ExpiresIn ?? 21600), (ulong)data.UserId!,
-                             data.RefreshToken!, meInfo.data.Nickname, meInfo.data.Identification.Number)
-                        );
+                        await context.MlUserAuthInfos.FirstOrDefaultAsync(x => x.UserId == data.UserId)
+                        ??
+                        new MlUserAuthInfo(data.AccessToken!, DateTime.Now.AddSeconds(data.ExpiresIn ?? 21600), (ulong)data.UserId!,
+                            data.RefreshToken!, meInfo.data.Nickname, meInfo.data.Identification.Number);
 
                     context.MlUserAuthInfos.Update(tentative);
                     await context.SaveChangesAsync();

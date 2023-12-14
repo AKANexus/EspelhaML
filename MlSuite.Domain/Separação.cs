@@ -13,7 +13,7 @@ namespace MlSuite.Domain
 		public Pedido Pedido { get; set; }
 		public DateTime Início { get; set; }
 		public DateTime Fim { get; set; }
-		public string Etiqueta { get; set; }
+		public string? Etiqueta { get; set; }
 	}
 
 	public class SeparaçãoItem : EntityBase

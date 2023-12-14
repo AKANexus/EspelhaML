@@ -5,7 +5,7 @@
         Desconhecido = -1,
         Pendente = 1,
         FretePago,
-        Autorizado,
+        ProntoParaEnvio,
         Enviado,
         Entregue,
         NãoEntregue,
@@ -21,6 +21,8 @@
         NoHub,
         EmRotaEntrega,
         RetornandoAoVendedor,
-        FulfilledFeedback
+        FulfilledFeedback,
+        ProntoParaImpressão,
+        ProntoParaColeta
     }
 }

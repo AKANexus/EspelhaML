@@ -19,12 +19,11 @@ namespace MlSuite.Api.Attributes
 			if (authContext.ActionDescriptor.EndpointMetadata.OfType<AnônimoAttribute>().Any())
 				return; //Segue o pipeline
 
-			UserInfo? userInfo = (UserInfo?)authContext.HttpContext.Items["userInfo"];
+			UserInfo? userInfo = (UserInfo?)authContext.HttpContext.Items["user_info"];
 
 			if (userInfo == null)
 			{
-				authContext.Result = new UnauthorizedObjectResult(new RetornoDto("Não Autorizado",
-					"Access token não autorizada para acessar esse endpoint"));
+				authContext.Result = new UnauthorizedObjectResult(new RetornoDto("Access token não autorizada para acessar esse endpoint"));
 			}
 		}
 	}

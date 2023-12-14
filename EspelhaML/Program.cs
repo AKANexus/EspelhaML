@@ -42,8 +42,10 @@ Action<DbContextOptionsBuilder> configureDbContext = c =>
     {
         b.MigrationsAssembly("MlSuite.MlSynch");
     });
+    #if DEBUG
     c.EnableSensitiveDataLogging(true);
     c.EnableDetailedErrors(true);
+    #endif
 };
 
 builder.Services.AddDbContext<TrilhaDbContext>(configureDbContext);

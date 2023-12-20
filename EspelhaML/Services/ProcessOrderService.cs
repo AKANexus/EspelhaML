@@ -36,8 +36,9 @@ namespace MlSuite.MlSynch.Services
                 .ThenInclude(y => y.Destinatário)
                 .Include(x => x.Itens)
                 .ThenInclude(pedidoItem => pedidoItem.Item).ThenInclude(item => item!.Variações)
-				//De acordo com https://learn.microsoft.com/en-us/ef/core/miscellaneous/nullable-reference-types#navigating-and-including-nullable-relationships
-                .Include(x => x.Pagamentos)
+                //De acordo com https://learn.microsoft.com/en-us/ef/core/miscellaneous/nullable-reference-types#navigating-and-including-nullable-relationships
+                .Include(x => x.Pagamentos).Include(pedido => pedido.Itens)
+                .ThenInclude(pedidoItem => pedidoItem.ItemVariação)
                 .FirstOrDefaultAsync(x => x.Id == orderResponse.data.Id);
 
             if (tentativo == null)
@@ -59,7 +60,8 @@ namespace MlSuite.MlSynch.Services
                         "invalid" => OrderStatus.Ilegal,
                         _ => OrderStatus.Desconhecido
                     },
-                    SellerId = orderResponse.data.Seller.Id
+                    SellerId = orderResponse.data.Seller.Id,
+                    PackId = orderResponse.data.PackId
                 };
                 if (orderResponse.data.OrderItems.Count > 0)
                     foreach (OrderItem orderItem in orderResponse.data.OrderItems)
@@ -189,9 +191,9 @@ namespace MlSuite.MlSynch.Services
                             CódRastreamento = shippingResponse.data.TrackingNumber,
                             TipoEnvio = shippingResponse.data.LogisticType switch
                             {
-                                "self_service" => ShipmentType.SelfService,
+                                "self_service" => ShipmentType.Flex,
                                 "fulfillment" => ShipmentType.Fulfillment,
-                                "cross_docking" => ShipmentType.CrossDocking,
+                                "cross_docking" => ShipmentType.Coleta,
                                 _ => ShipmentType.Desconhecido
                             },
                             Destinatário = new()
@@ -217,6 +219,7 @@ namespace MlSuite.MlSynch.Services
             else
             {
                 tentativo.Frete = orderResponse.data.ShippingCost;
+                tentativo.PackId = orderResponse.data.PackId;
                 tentativo.Status = orderResponse.data.Status switch
                 {
                     "confirmed" => OrderStatus.Confirmado,
@@ -392,11 +395,17 @@ namespace MlSuite.MlSynch.Services
                                 },
                                 SubStatus = shippingResponse.data.Substatus switch
                                 {
+                                    "ready_to_print" => ShipmentSubStatus.ProntoParaImpressão,
+                                    "ready_for_pickup" => ShipmentSubStatus.ProntoParaColeta,
                                     "picked_up" => ShipmentSubStatus.Coletado,
                                     "authorized_by_carrier" => ShipmentSubStatus.AutorizadoPelaTransportadora,
                                     "in_hub" => ShipmentSubStatus.NoHub,
                                     "printed" => ShipmentSubStatus.Impresso,
-                                    _ => ShipmentSubStatus.Impresso,
+                                    "out_for_delivery" => ShipmentSubStatus.EmRotaEntrega,
+                                    "returning_to_sender" => ShipmentSubStatus.RetornandoAoVendedor,
+                                    "fulfilled_feedback" => ShipmentSubStatus.FulfilledFeedback,
+                                    null => null,
+                                    _ => ShipmentSubStatus.Desconhecido,
                                 },
                                 SubStatusDescrição = shippingResponse.data.Substatus,
                                 CriaçãoDoPedido = shippingResponse.data.DateCreated,
@@ -437,12 +446,19 @@ namespace MlSuite.MlSynch.Services
                             };
                             tentativo.Envio.SubStatus = shippingResponse.data.Substatus switch
                             {
+                                "ready_to_print" => ShipmentSubStatus.ProntoParaImpressão,
+                                "ready_for_pickup" => ShipmentSubStatus.ProntoParaColeta,
                                 "picked_up" => ShipmentSubStatus.Coletado,
                                 "authorized_by_carrier" => ShipmentSubStatus.AutorizadoPelaTransportadora,
                                 "in_hub" => ShipmentSubStatus.NoHub,
                                 "printed" => ShipmentSubStatus.Impresso,
-                                _ => ShipmentSubStatus.Impresso,
+                                "out_for_delivery" => ShipmentSubStatus.EmRotaEntrega,
+                                "returning_to_sender" => ShipmentSubStatus.RetornandoAoVendedor,
+                                "fulfilled_feedback" => ShipmentSubStatus.FulfilledFeedback,
+                                null => null,
+                                _ => ShipmentSubStatus.Desconhecido,
                             };
+
                             tentativo.Envio.SubStatusDescrição = shippingResponse.data.Substatus;
                             //tentativo.Envio.ValorDeclarado = shippingResponse.data.DeclaredValue;
                             //tentativo.Envio.Largura = shippingResponse.data.Dimensions?.Width;

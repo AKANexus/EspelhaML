@@ -21,6 +21,7 @@ builder.Services.AddScoped(_ => new MlApiService(
 builder.Services.AddScoped<ProcessQuestionService>();
 builder.Services.AddScoped<ProcessItemService>();
 builder.Services.AddScoped<ProcessOrderService>();
+builder.Services.AddScoped<ProcessShipmentService>();
 
 NpgsqlConnectionStringBuilder csb = new()
 {

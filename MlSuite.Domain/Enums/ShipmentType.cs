@@ -4,7 +4,7 @@
     {
         Desconhecido = -1,
         Fulfillment = 1,
-        SelfService,
-        CrossDocking
+        Flex, //Flex?
+        Coleta //Coleta
     }
 }

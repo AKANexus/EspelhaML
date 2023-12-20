@@ -1,4 +1,6 @@
-﻿using MlSuite.Domain.Enums;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.CompilerServices;
+using MlSuite.Domain.Enums;
 
 namespace MlSuite.Domain
 {
@@ -12,6 +14,7 @@ namespace MlSuite.Domain
         public List<PedidoPagamento> Pagamentos { get; set; } = new();
         public ulong SellerId { get; set; }
         public Separação? Separação { get; set; }
+        public ulong? PackId { get; set; }
     }
 
     public class PedidoItem : EntityBase

@@ -1,15 +1,22 @@
 ﻿using System.Text.Json.Serialization;
+using MlSuite.Domain.Enums;
 
 namespace MlSuite.Api.DTOs
 {
 	public class PedidoDto
-	{
-		[JsonPropertyName("items")]
-		public List<PedidoItemDto> PedidoItems { get; set; }
+    {
+        [JsonPropertyName("items")] public List<PedidoItemDto> PedidoItems { get; set; } = new();
 		[JsonPropertyName("num_pedido")]
 		public ulong NúmPedido { get; set; }
 		[JsonPropertyName("separado_por")] 
 		public string? SeparadoPor { get; set; }
+
+		[JsonPropertyName("tipo_envio")] 
+        public ShipmentType TipoEnvio { get; set; }
+		[JsonPropertyName("conta_ml")]
+		public string MlUsername { get; set; }
+		[JsonPropertyName("pack_id")]
+		public ulong? PackId { get; set; }
 	}
 
 	public class PedidoItemDto

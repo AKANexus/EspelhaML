@@ -84,8 +84,8 @@ namespace MlSuite.MlSynch.Controllers
         {
 	        using (EventLog el = new EventLog("Application"))
 	        {
-                el.Source = "MlSuite";
-                el.WriteEntry($"Callback Recebido:\n{System.Text.Json.JsonSerializer.Serialize(notification)}", EventLogEntryType.Information);
+                //el.Source = "MlSuite";
+                //el.WriteEntry($"Callback Recebido:\n{System.Text.Json.JsonSerializer.Serialize(notification)}", EventLogEntryType.Information);
             }
             //Debug.WriteLine("==========Yellow light!==========");
             await CallbackSemaphore.semaphore.WaitAsync();

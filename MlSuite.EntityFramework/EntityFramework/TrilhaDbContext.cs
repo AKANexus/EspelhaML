@@ -17,7 +17,7 @@ namespace MlSuite.EntityFramework.EntityFramework
 
         public TrilhaDbContext(DbContextOptions options) : base(options)
         {
-            
+
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -42,10 +42,9 @@ namespace MlSuite.EntityFramework.EntityFramework
                 .HasOne(item => item.Seller)
                 .WithMany();
             modelBuilder.Entity<Pedido>()
-	            .HasOne(x => x.Separação)
-	            .WithOne(y => y.Pedido)
-	            .HasForeignKey<Separação>(y => y.PedidoId);
-                
+                .HasOne(x => x.Separação)
+                .WithOne(y => y.Pedido)
+                .HasForeignKey<Separação>(y => y.PedidoId);
 
             base.OnModelCreating(modelBuilder);
         }

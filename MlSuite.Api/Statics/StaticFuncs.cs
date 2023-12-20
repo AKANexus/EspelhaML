@@ -4,7 +4,7 @@
     {
         public static class Extensions
         {
-            public static bool IsNumericType(Type type)
+            public static bool IsNumericType(Type? type)
             {
                 return type == typeof(int) ||
                        type == typeof(uint) ||

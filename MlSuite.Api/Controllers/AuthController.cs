@@ -40,7 +40,7 @@ namespace MlSuite.Api.Controllers
             IServiceScope scope = _scopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<TrilhaDbContext>();
             var userInfoTentativo =
-                await dbContext.Usuários.FirstOrDefaultAsync(x => x.Username == dto.Login);
+                await dbContext.Usuários.FirstOrDefaultAsync(x => EF.Functions.ILike(x.Username, dto.Login));
             if (userInfoTentativo == null)
             {
                 var retorno1 = new RetornoDto("Usuário ou senha incorretos.");

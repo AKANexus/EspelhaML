@@ -8,16 +8,16 @@ namespace MlSuite.MlSynch.Services
 {
     public class ProcessItemService
     {
-        private readonly IServiceProvider _provider;
+        private readonly IServiceScopeFactory _factory;
 
-        public ProcessItemService(IServiceProvider provider)
+        public ProcessItemService(IServiceScopeFactory factory)
         {
-            _provider = provider;
+            _factory = factory;
         }
 
         public async Task ProcessInfo(string resourceId, string apiToken)
         {
-            IServiceProvider scopedProvider = _provider.CreateScope().ServiceProvider;
+            IServiceProvider scopedProvider = _factory.CreateScope().ServiceProvider;
             MlApiService mlApi = scopedProvider.GetRequiredService<MlApiService>();
             TrilhaDbContext context = scopedProvider.GetRequiredService<TrilhaDbContext>();
             var itemResponse = await mlApi.GetItemById(apiToken, resourceId);
@@ -87,11 +87,15 @@ namespace MlSuite.MlSynch.Services
                         }
                     }
 
-                    foreach (ItemVariação itemVariação in tentativo.Variações)
+                    foreach (ItemVariação itemVariação in tentativo.Variações.ToList())
                     {
                         if (itemResponse.data.Variations.All(x => x.Id != itemVariação.Id))
                         {
-                            tentativo.Variações.Remove(itemVariação);
+                            var itemVarARemover = tentativo.Variações.FirstOrDefault(x => x.Id == itemVariação.Id);
+                            if (itemVarARemover != null)
+                            {
+                                tentativo.Variações.Remove(itemVarARemover);
+                            }
                         }
                     }
                 }

@@ -393,7 +393,7 @@ namespace MlSuite.MlSynch.Services
                                     "cancelled" => ShipmentStatus.Cancelado,
                                     _ => ShipmentStatus.Desconhecido
                                 },
-                                SubStatus = shippingResponse.data.Substatus switch
+                                SubStatus = shippingResponse.data?.Substatus switch
                                 {
                                     "ready_to_print" => ShipmentSubStatus.ProntoParaImpressão,
                                     "ready_for_pickup" => ShipmentSubStatus.ProntoParaColeta,
@@ -407,27 +407,27 @@ namespace MlSuite.MlSynch.Services
                                     null => null,
                                     _ => ShipmentSubStatus.Desconhecido,
                                 },
-                                SubStatusDescrição = shippingResponse.data.Substatus,
-                                CriaçãoDoPedido = shippingResponse.data.DateCreated,
+                                SubStatusDescrição = shippingResponse.data?.Substatus,
+                                CriaçãoDoPedido = shippingResponse.data?.DateCreated,
                                 //ValorDeclarado = shippingResponse.data.DeclaredValue,
                                 //Largura = shippingResponse.data.Dimensions?.Width,
                                 //Altura = shippingResponse.data.Dimensions?.Height,
                                 //Comprimento = shippingResponse.data.Dimensions?.Length,
                                 //Peso = shippingResponse.data.Dimensions?.Weight,
-                                CódRastreamento = shippingResponse.data.TrackingNumber,
+                                CódRastreamento = shippingResponse.data?.TrackingNumber,
                                 Destinatário = new()
                                 {
-                                    Id = shippingResponse.data.ReceiverAddress.Id,
-                                    Nome = shippingResponse.data.ReceiverAddress.ReceiverName ?? shippingResponse.data.ReceiverAddress?.Agency?.Description ?? "N/A",
-                                    Telefone = shippingResponse.data.ReceiverAddress?.ReceiverPhone ?? shippingResponse.data.ReceiverAddress?.Agency?.Phone ?? "XXXX",
-                                    Logradouro = shippingResponse.data.ReceiverAddress?.StreetName ?? "Desconhecido",
-                                    Número = shippingResponse.data.ReceiverAddress?.StreetNumber ?? "Desconhecido",
-                                    CEP = shippingResponse.data.ReceiverAddress?.ZipCode ?? "Desconhecido",
-                                    Cidade = shippingResponse.data.ReceiverAddress?.City.Name ?? "Desconhecido",
-                                    UF = shippingResponse.data.ReceiverAddress?.State.Name ?? "Desconhecido",
-                                    Bairro = shippingResponse.data.ReceiverAddress?.Neighborhood?.Name ?? "Desconhecido",
-                                    Distrito = shippingResponse.data.ReceiverAddress?.Municipality.Name,
-                                    ÉResidencial = shippingResponse.data.ReceiverAddress?.DeliveryPreference == "residential"
+                                    Id = shippingResponse.data?.ReceiverAddress.Id,
+                                    Nome = shippingResponse.data?.ReceiverAddress.ReceiverName ?? shippingResponse.data?.ReceiverAddress?.Agency?.Description ?? "N/A",
+                                    Telefone = shippingResponse.data?.ReceiverAddress?.ReceiverPhone ?? shippingResponse.data?.ReceiverAddress?.Agency?.Phone ?? "XXXX",
+                                    Logradouro = shippingResponse.data?.ReceiverAddress?.StreetName ?? "Desconhecido",
+                                    Número = shippingResponse.data?.ReceiverAddress?.StreetNumber ?? "Desconhecido",
+                                    CEP = shippingResponse.data?.ReceiverAddress?.ZipCode ?? "Desconhecido",
+                                    Cidade = shippingResponse.data?.ReceiverAddress?.City.Name ?? "Desconhecido",
+                                    UF = shippingResponse.data?.ReceiverAddress?.State.Name ?? "Desconhecido",
+                                    Bairro = shippingResponse.data?.ReceiverAddress?.Neighborhood?.Name ?? "Desconhecido",
+                                    Distrito = shippingResponse.data?.ReceiverAddress?.Municipality.Name,
+                                    ÉResidencial = shippingResponse.data?.ReceiverAddress?.DeliveryPreference == "residential"
                                 }
                             };
                         }
@@ -474,7 +474,7 @@ namespace MlSuite.MlSynch.Services
                             tentativo.Envio.Destinatário.Cidade = shippingResponse.data.ReceiverAddress?.City.Name ?? "Desconhecido";
                             tentativo.Envio.Destinatário.UF = shippingResponse.data.ReceiverAddress?.State.Name ?? "Desconhecido";
                             tentativo.Envio.Destinatário.Bairro = shippingResponse.data.ReceiverAddress?.Neighborhood?.Name ?? "Desconhecido";
-                            tentativo.Envio.Destinatário.Distrito = shippingResponse.data.ReceiverAddress?.Municipality.Name;
+                            tentativo.Envio.Destinatário.Distrito = shippingResponse.data.ReceiverAddress?.Municipality?.Name ?? "Desconhecido";
                             tentativo.Envio.Destinatário.ÉResidencial = shippingResponse.data.ReceiverAddress?.DeliveryPreference ==
                                                                         "residential";
                         }

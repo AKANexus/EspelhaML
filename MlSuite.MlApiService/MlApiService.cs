@@ -240,7 +240,7 @@ namespace MlSuite.MlApiServiceLib
                 ShipmentResponseDto? retorno =
                     System.Text.Json.JsonSerializer.Deserialize<ShipmentResponseDto>(response?.Content ?? "");
                 
-                return ((int?)response?.StatusCode ?? 500, null, retorno?.FailedShipments[0].Message ?? "Erro genérico");
+                return ((int?)response?.StatusCode ?? 500, null, retorno?.FailedShipments?[0]?.Message ?? "Erro genérico");
             }
 
             else
@@ -307,7 +307,7 @@ namespace MlSuite.MlApiServiceLib
     public class ShipmentResponseDto
     {
         [JsonPropertyName("failed_shipments")]
-        public List<FailedShipment> FailedShipments { get; set; }
+        public List<FailedShipment>? FailedShipments { get; set; }
 
         [JsonPropertyName("status")]
         public int Status { get; set; }

@@ -159,19 +159,17 @@ namespace MlSuite.Api.Controllers
 
             IQueryable<Pedido> query = context.Pedidos
                 .Include(pedido => pedido.Separação)
-                .ThenInclude(separação => separação!.Usuário)
+                .ThenInclude(separação => separação!.Gerador)
+                .Include(pedido => pedido.Separação)
+                .ThenInclude(separação => separação!.Embrulhador)                
+                .Include(pedido => pedido.Separação)
+                .ThenInclude(separação => separação!.Separador)
                 .Include(pedido => pedido.Itens)
                 .ThenInclude(item => item.Separação)
                 .Include(pedido => pedido.Itens)
                 .ThenInclude(item => item.Item)
                 .Include(pedido => pedido.Envio)
-                .Where(pedido => pedido.Envio != null &&
-                                 pedido.Envio.Status == ShipmentStatus.ProntoParaEnvio &&
-                                 pedido.Envio.SubStatusDescrição != "invoice_pending" &&
-                                 pedido.Envio.SubStatusDescrição != "picked_up" &&
-                                 pedido.Envio.TipoEnvio != ShipmentType.Fulfillment &&
-                                 (pedido.Envio.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
-                                 pedido.Envio.SubStatus == ShipmentSubStatus.Impresso))
+                .Where(pedido => pedido.ProntoParaSeparação())
                 .ApplyFilters(dto);
 
             int maxRecords = await query.CountAsync();
@@ -852,4 +850,5 @@ namespace MlSuite.Api.Controllers
         }
         */
     }
+    
 }

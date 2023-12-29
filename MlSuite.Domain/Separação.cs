@@ -6,18 +6,26 @@ using System.Threading.Tasks;
 
 namespace MlSuite.Domain
 {
-	public class Separação : EntityBase
-	{
-		public UserInfo Usuário { get; set; }
-		public Guid PedidoId { get; set; }
-		public Pedido Pedido { get; set; }
-		public DateTime Início { get; set; }
-		public DateTime Fim { get; set; }
-		public string? Etiqueta { get; set; }
-	}
+    public class Separação : EntityBase
+    {
+        public UserInfo Gerador { get; set; }
+        public UserInfo Separador { get; set; }
+        public UserInfo Embrulhador { get; set; }
+        public Guid PedidoId { get; set; }
+        public List<Pedido> Pedidos { get; set; }
+        public DateTime Início { get; set; }
+        public DateTime Fim { get; set; }
+        public string? Etiqueta { get; set; }
+        public StatusSeparação StatusSeparação { get; set; }
+    }
 
-	public class SeparaçãoItem : EntityBase
-	{
-		public int Separados { get; set; }
-	}
+    public enum StatusSeparação
+    {
+        Aberta,
+        Iniciada,
+        Impressa,
+        Separado,
+        Embalado,
+        Finalizado
+    }
 }

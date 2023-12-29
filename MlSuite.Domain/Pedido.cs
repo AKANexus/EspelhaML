@@ -10,12 +10,23 @@ namespace MlSuite.Domain
         public decimal? Frete { get; set; }
         public OrderStatus Status { get; set; }
         public List<PedidoItem> Itens { get; set; } = new();
-        public PedidoEnvio? Envio { get; set; }
+        public Envio? Envio { get; set; }
         public List<PedidoPagamento> Pagamentos { get; set; } = new();
         public ulong SellerId { get; set; }
-        public Separação? Separação { get; set; }
         public ulong? PackId { get; set; }
-        //public string Região { get; set; }
+
+        public bool ProntoParaImpressão()
+        {
+            return false;
+        }
+
+        public bool ProntoParaSeparação()
+        {
+            return Envio is { Status: ShipmentStatus.ProntoParaEnvio, SubStatus: ShipmentSubStatus.ProntoParaColeta or ShipmentSubStatus.Impresso } &&
+                   Envio.SubStatusDescrição != "invoice_pending" &&
+                   Envio.SubStatusDescrição != "picked_up" &&
+                   Envio.TipoEnvio != ShipmentType.Fulfillment;
+        }
     }
 
     public class PedidoItem : EntityBase
@@ -27,7 +38,7 @@ namespace MlSuite.Domain
         public string DescritorVariação { get; set; }
         public ItemVariação? ItemVariação { get; set; }
         public string Sku { get; set; } = "N/A";
-        public SeparaçãoItem? Separação { get; set; }
+        public EmbalagemItem? EmbalagemItem { get; set; }
     }
 
     public class PedidoPagamento : EntityBase
@@ -41,7 +52,7 @@ namespace MlSuite.Domain
 
     }
 
-    public class PedidoEnvio : EntityBase
+    public class Envio : EntityBase
     {
         public ulong Id { get; set; }
         public ShipmentStatus Status { get; set; }
@@ -56,6 +67,8 @@ namespace MlSuite.Domain
         public string? CódRastreamento { get; set; }
         public ShipmentType TipoEnvio { get; set; }
         public PedidoDestinatário? Destinatário { get; set; }
+        public List<Pedido> Pedidos { get; set; } = new();
+        public Embalagem Embalagem { get; set; }
     }
 
     public class PedidoDestinatário : EntityBase

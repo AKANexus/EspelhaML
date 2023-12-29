@@ -24,7 +24,7 @@ namespace MlSuite.EntityFramework.EntityFramework
         {
             modelBuilder.Entity<Pedido>()
                 .HasAlternateKey(x => x.Id);
-            modelBuilder.Entity<PedidoEnvio>()
+            modelBuilder.Entity<Envio>()
                 .HasAlternateKey(x => x.Id);
             modelBuilder.Entity<PedidoPagamento>()
                 .HasAlternateKey(x => x.Id);
@@ -43,8 +43,7 @@ namespace MlSuite.EntityFramework.EntityFramework
                 .WithMany();
             modelBuilder.Entity<Pedido>()
                 .HasOne(x => x.Separação)
-                .WithOne(y => y.Pedido)
-                .HasForeignKey<Separação>(y => y.PedidoId);
+                .WithMany(y => y.Pedidos);
 
             base.OnModelCreating(modelBuilder);
         }

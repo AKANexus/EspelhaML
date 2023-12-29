@@ -15,69 +15,10 @@ using static MlSuite.Api.Statics.StaticFuncs.Extensions;
 
 namespace MlSuite.Api.Controllers
 {
-    [Route("pedidos"), Autorizar, EnableCors]
-    public class PedidosController : Controller
+    public static class QueryFiltering
     {
-
-        private readonly IServiceScopeFactory _scopeFactory;
-
-        public PedidosController(IServiceScopeFactory scopeFactory)
+        public static IQueryable<Pedido> ApplyFilters(this IQueryable<Pedido> query, FilteredQueryDto? dto)
         {
-            _scopeFactory = scopeFactory;
-        }
-
-        //[HttpGet("{id:long}"), Anônimo]
-        //public async Task<IActionResult> GetPedidoById(ulong id)
-        //{
-        //    var provider = _scopeFactory.CreateScope().ServiceProvider;
-        //    var context = provider.GetRequiredService<TrilhaDbContext>();
-
-        //    var pedidoTentativo = await context.Pedidos.Include(pedido => pedido.Itens)
-        //        .ThenInclude(pedidoItem => pedidoItem.Item).FirstOrDefaultAsync(x => x.Id == id);
-        //    if (pedidoTentativo == null)
-        //    {
-        //        var retorno1 = new RetornoDto("Nenhum registro encontrado");
-        //        return Ok(new { retorno1.Mensagem, Codigo = "OK" });
-        //    }
-
-        //    PedidoDto dto = new PedidoDto();
-        //    dto.NúmPedido = pedidoTentativo.Id;
-        //    dto.PedidoItems = pedidoTentativo.Itens.Select(x =>
-        //        new PedidoItemDto
-        //        {
-        //            Sku = x.Sku,
-        //            Descrição = x.Item.Título,
-        //            Quantidade = x.QuantidadeVendida,
-        //            UrlImagem = x.Item.PrimeiraFoto
-
-        //        }).ToList();
-        //    var retorno2 = new RetornoDto("Dados retornados", dto);
-        //    return Ok(new { retorno2.Mensagem, retorno2.Registros, Codigo = "OK", Pedido = retorno2.Dados });
-        //}
-
-        [HttpPost("getPedidosFiltered"), Anônimo]
-        public async Task<IActionResult> GetPedidosFiltered([FromBody] FilteredQueryDto? dto)
-        {
-            var provider = _scopeFactory.CreateScope().ServiceProvider;
-            var context = provider.GetRequiredService<TrilhaDbContext>();
-
-            IQueryable<Pedido> query = context.Pedidos
-                .Include(pedido => pedido.Separação)
-                .ThenInclude(separação => separação!.Usuário)
-                .Include(pedido => pedido.Itens)
-                .ThenInclude(item => item.Separação)
-                .Include(pedido => pedido.Itens)
-                .ThenInclude(item => item.Item)
-                .Include(pedido => pedido.Envio)
-                .Where(pedido => pedido.Envio != null &&
-                                 pedido.Envio.Status == ShipmentStatus.ProntoParaEnvio &&
-                                 pedido.Envio.SubStatusDescrição != "invoice_pending" &&
-                                 pedido.Envio.SubStatusDescrição != "picked_up" &&
-                                 pedido.Envio.TipoEnvio != ShipmentType.Fulfillment &&
-                                 (pedido.Envio.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
-                                 pedido.Envio.SubStatus == ShipmentSubStatus.Impresso));
-
-
             if (dto?.Filters != null)
                 foreach (var filter in dto.Filters)
                 {
@@ -193,6 +134,45 @@ namespace MlSuite.Api.Controllers
                         : query.OrderBy($"{actualProperty}");
                 }
             }
+
+            return query;
+        }
+    }
+
+
+    [Route("pedidos"), Autorizar, EnableCors]
+    public class PedidosController : Controller
+    {
+
+        private readonly IServiceScopeFactory _scopeFactory;
+
+        public PedidosController(IServiceScopeFactory scopeFactory)
+        {
+            _scopeFactory = scopeFactory;
+        }
+
+        [HttpPost("getPedidosFiltered"), Anônimo]
+        public async Task<IActionResult> GetPedidosFiltered([FromBody] FilteredQueryDto? dto)
+        {
+            var provider = _scopeFactory.CreateScope().ServiceProvider;
+            var context = provider.GetRequiredService<TrilhaDbContext>();
+
+            IQueryable<Pedido> query = context.Pedidos
+                .Include(pedido => pedido.Separação)
+                .ThenInclude(separação => separação!.Usuário)
+                .Include(pedido => pedido.Itens)
+                .ThenInclude(item => item.Separação)
+                .Include(pedido => pedido.Itens)
+                .ThenInclude(item => item.Item)
+                .Include(pedido => pedido.Envio)
+                .Where(pedido => pedido.Envio != null &&
+                                 pedido.Envio.Status == ShipmentStatus.ProntoParaEnvio &&
+                                 pedido.Envio.SubStatusDescrição != "invoice_pending" &&
+                                 pedido.Envio.SubStatusDescrição != "picked_up" &&
+                                 pedido.Envio.TipoEnvio != ShipmentType.Fulfillment &&
+                                 (pedido.Envio.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
+                                 pedido.Envio.SubStatus == ShipmentSubStatus.Impresso))
+                .ApplyFilters(dto);
 
             int maxRecords = await query.CountAsync();
             query = query.Skip(Math.Max(dto?.Skip ?? 0, 0)).Take(Math.Min(dto?.Take ?? 15, 15));
@@ -315,7 +295,7 @@ namespace MlSuite.Api.Controllers
                 pedidoEmSeparaçãoDto.SeparadoPor = pedidoEmSeparação.Separação?.Usuário?.DisplayName;
                 pedidoEmSeparaçãoDto.TipoEnvio = pedidoEmSeparação.Envio?.TipoEnvio ?? ShipmentType.Desconhecido;
                 pedidoEmSeparaçãoDto.MlUsername = mlUsers.First(x => x.UserId == pedidoEmSeparação.SellerId).AccountNickname;
-               
+
 
                 if (pedidoEmSeparação.PackId != null)
                 {
@@ -360,8 +340,8 @@ namespace MlSuite.Api.Controllers
             return Ok(new { retorno2.Mensagem, Codigo = "NENHUM_PEDIDO_EM_SEPARACAO" });
         }
 
-        [HttpGet("processaSku"), Autorizar]
-        public async Task<IActionResult> ProcessaSku([FromQuery] string sku)
+        [HttpPost("processaSku"), Autorizar]
+        public async Task<IActionResult> ProcessaSku([FromQuery] string sku, [FromBody] FilteredQueryDto? dto)
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
             var context = provider.GetRequiredService<TrilhaDbContext>();
@@ -401,11 +381,12 @@ namespace MlSuite.Api.Controllers
                                  pedido.Envio.TipoEnvio != ShipmentType.Fulfillment &&
                                  (pedido.Envio.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
                                   pedido.Envio.SubStatus == ShipmentSubStatus.Impresso))
+                .ApplyFilters(dto)
+
                 .FirstOrDefaultAsync(x => x.Separação != null &&
                                           x.Separação.Usuário.Uuid == requestingUser.Uuid &&
                                             x.Itens.Any(y => y.Separação!.Separados != y.QuantidadeVendida
                                           //x.Separação.Etiqueta == null //Pedido está finalizado se etiqueta foi gerada
-
                                           ));
 
             if (pedidoEmSeparação != null)
@@ -415,7 +396,7 @@ namespace MlSuite.Api.Controllers
                 pedidoEmSeparaçãoDto.SeparadoPor = pedidoEmSeparação.Separação?.Usuário?.DisplayName;
                 pedidoEmSeparaçãoDto.TipoEnvio = pedidoEmSeparação.Envio?.TipoEnvio ?? ShipmentType.Desconhecido;
                 pedidoEmSeparaçãoDto.MlUsername = mlUsers.First(x => x.UserId == pedidoEmSeparação.SellerId).AccountNickname;
-               
+
 
                 if (pedidoEmSeparação.PackId != null)
                 {
@@ -516,7 +497,7 @@ namespace MlSuite.Api.Controllers
                     return StatusCode(500, e);
                 }
 
-                if (pedidoEmSeparação.Itens.All(x => x.Separação != null && x.QuantidadeVendida == x.Separação.Separados))
+                if (pedidoEmSeparaçãoDto.PedidoItems.All(x => x.Separados == x.Quantidade))
                 {
                     var retornoPedido = new RetornoDto("Esse pedido já está concluído", pedidoEmSeparaçãoDto);
                     return Ok(new
@@ -553,6 +534,7 @@ namespace MlSuite.Api.Controllers
                                  (pedido.Envio.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
                                   pedido.Envio.SubStatus == ShipmentSubStatus.Impresso))
                 .Where(x => x.Itens.Any(y => y.Sku == sku) && x.Separação == null)
+                .ApplyFilters(dto)
                 .OrderBy(x => x.CreatedAt)
                 .FirstOrDefaultAsync();
 
@@ -575,7 +557,7 @@ namespace MlSuite.Api.Controllers
             novoPedidoDto.NúmPedido = pedidoTentativo.Id;
             novoPedidoDto.TipoEnvio = pedidoTentativo.Envio?.TipoEnvio ?? ShipmentType.Desconhecido;
             novoPedidoDto.MlUsername = mlUsers.First(x => x.UserId == pedidoTentativo.SellerId).AccountNickname;
-            
+
 
 
 
@@ -636,7 +618,7 @@ namespace MlSuite.Api.Controllers
                 return StatusCode(500, e);
             }
 
-            if (pedidoTentativo.Itens.All(x => x.Separação != null && x.QuantidadeVendida == x.Separação.Separados))
+            if (novoPedidoDto.PedidoItems.All(x => x.Separados == x.Quantidade))
             {
                 var retornoPedido = new RetornoDto("Esse pedido já está concluído", novoPedidoDto);
                 return Ok(new

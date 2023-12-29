@@ -386,6 +386,8 @@ public class OrderRootDto : ErrorDto
 
     [JsonPropertyName("order_request")]
     public OrderRequest OrderRequest { get; set; }
+
+
 }
 
 public class Seller

@@ -15,6 +15,7 @@ namespace MlSuite.Domain
         public ulong SellerId { get; set; }
         public Separação? Separação { get; set; }
         public ulong? PackId { get; set; }
+        //public string Região { get; set; }
     }
 
     public class PedidoItem : EntityBase

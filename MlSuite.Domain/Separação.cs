@@ -17,6 +17,7 @@ namespace MlSuite.Domain
         public DateTime Fim { get; set; }
         public string? Etiqueta { get; set; }
         public StatusSeparação StatusSeparação { get; set; }
+        public long NúmSeparação { get; set; }
     }
 
     public enum StatusSeparação

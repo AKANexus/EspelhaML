@@ -14,6 +14,7 @@ namespace MlSuite.EntityFramework.EntityFramework
         public DbSet<UserInfo> Usuários { get; set; } = null!;
         public DbSet<Separação> Separações { get; set; } = null!;
         public DbSet<PromolimitEntry> PromolimitEntries { get; set; } = null!;
+        public DbSet<Pack> Packs { get; set; } = null!;
 
         public TrilhaDbContext(DbContextOptions options) : base(options)
         {

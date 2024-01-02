@@ -13,8 +13,8 @@ namespace MlSuite.Domain
         public Envio Envio { get; set; } = new();
         public List<PedidoPagamento> Pagamentos { get; set; } = new();
         public ulong SellerId { get; set; }
-        public ulong? PackId { get; set; }
-        public Separação Separação { get; set; } = new();
+        public Pack? Pack { get; set; }
+        public Separação? Separação { get; set; } = new();
 
         public bool ProntoParaImpressão()
         {
@@ -40,6 +40,7 @@ namespace MlSuite.Domain
         public ItemVariação? ItemVariação { get; set; }
         public string Sku { get; set; } = "N/A";
         public EmbalagemItem? EmbalagemItem { get; set; }
+        public Pedido Pedido { get; set; }
     }
 
     public class PedidoPagamento : EntityBase

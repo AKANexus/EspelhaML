@@ -8,7 +8,8 @@ namespace MlSuite.Domain
 {
     public class Embalagem : EntityBase
     {
-        public List<EmbalagemItem> EmbalagemItems { get; set; }
+        //public List<EmbalagemItem> EmbalagemItems { get; set; }
+        public bool Aberto { get; set; }
     }
 
     public class EmbalagemItem : EntityBase
@@ -16,4 +17,5 @@ namespace MlSuite.Domain
         public int Separados { get; set; }
         public PedidoItem PedidoItem { get; set; }
     }
+
 }

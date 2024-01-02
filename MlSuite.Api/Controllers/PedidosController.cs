@@ -137,6 +137,20 @@ namespace MlSuite.Api.Controllers
 
             return query;
         }
+
+        public static IQueryable<Pedido> DefaultIncludes(this DbSet<Pedido> contextItem)
+        {
+            return contextItem
+                .Include(pedido => pedido.Itens)
+                .ThenInclude(item => item.EmbalagemItem)
+                .Include(pedido => pedido.Itens)
+                .ThenInclude(item=>item.Item)
+                .Include(pedido => pedido.Envio)
+                .ThenInclude(envio => envio.Embalagem)
+                //.ThenInclude(embalagem => embalagem.EmbalagemItems)
+                .Include(pedido => pedido.Separação)
+                .ThenInclude(separação => separação.Separador);
+        }
     }
 
 
@@ -158,17 +172,8 @@ namespace MlSuite.Api.Controllers
             var context = provider.GetRequiredService<TrilhaDbContext>();
 
             IQueryable<Pedido> query = context.Pedidos
-                .Include(pedido => pedido.Separação)
-                .ThenInclude(separação => separação!.Gerador)
-                .Include(pedido => pedido.Separação)
-                .ThenInclude(separação => separação!.Embrulhador)                
-                .Include(pedido => pedido.Separação)
-                .ThenInclude(separação => separação!.Separador)
-                .Include(pedido => pedido.Itens)
-                .ThenInclude(item => item.Separação)
-                .Include(pedido => pedido.Itens)
-                .ThenInclude(item => item.Item)
-                .Include(pedido => pedido.Envio)
+                .DefaultIncludes()
+                .AsNoTracking()
                 .Where(pedido => pedido.ProntoParaSeparação())
                 .ApplyFilters(dto);
 
@@ -182,58 +187,70 @@ namespace MlSuite.Api.Controllers
                 List<Pedido> queryResult = await query.ToListAsync();
                 foreach (Pedido pedido in queryResult)
                 {
-                    if (pedido.PackId != null && packIdList.Contains((ulong)pedido.PackId))
+                    if (pedido.PackId != null && packIdList.Contains((ulong)pedido.PackId)) 
+                        //Se o pedido já foi processado como parte de um pack
                     {
                         continue;
                     }
-                    PedidoDto pedidoEncontrado = new PedidoDto();
-                    pedidoEncontrado.NúmPedido = pedido.Id;
-                    pedidoEncontrado.SeparadoPor = pedido.Separação?.Usuário?.DisplayName;
-                    if (pedido.PackId != null)
+
+                    PedidoDto pedidoEncontradoDto = new()
                     {
-                        packIdList.Add((ulong)pedido.PackId);
+                        NúmPedido = pedido.Id,
+                        PackId = pedido.PackId,
+                        SeparadoPor = pedido.Separação?.Separador?.DisplayName,
+                        TipoEnvio = pedido.Envio?.TipoEnvio ?? ShipmentType.Desconhecido,
+                        MlUsername = mlUsers.First(x => x.UserId == pedido.SellerId).AccountNickname
+                    };
+
+                    if (pedido.PackId != null)
+                        //Se o pedido foi parte de um pack
+                    {
+                        packIdList.Add((ulong)pedido.PackId); //Acrescenta à lista de pedidos processados
                         IEnumerable<Pedido> pedidosDoPack = await context.Pedidos.AsNoTracking()
-                            .Where(x => x.PackId == pedido.PackId).Include(pedido => pedido.Itens)
-                            .ThenInclude(pedidoItem => pedidoItem.Item).Include(pedido => pedido.Itens)
-                            .ThenInclude(pedidoItem => pedidoItem.Separação).ToListAsync();
+                            .Where(ped => ped.PackId == pedido.PackId)
+                            .Include(ped => ped.Itens)
+                            .ThenInclude(item => item.Item)
+                            .Include(ped => ped.Itens)
+                            .ThenInclude(item => item.EmbalagemItem)
+                            .ToListAsync();
+                        //Obtém todos os pedidos que fazem parte do pack
 
                         foreach (Pedido pedidoDoPack in pedidosDoPack)
                         {
-                            pedidoEncontrado.PedidoItems.AddRange(pedidoDoPack.Itens.Select(y =>
-                                new PedidoItemDto
-                                {
-                                    Sku = y.Sku,
-                                    Descrição = y.Item!.Título,
-                                    Quantidade = y.QuantidadeVendida,
-                                    UrlImagem = y.Item.PrimeiraFoto,
-                                    Separados = y.Separação?.Separados ?? 0,
-
-                                }));
+                            //Pra cada pedido que faz parte do pack, pegue os itens desse pedido e jogue no DTO
+                            pedidoEncontradoDto.PedidoItems.AddRange(pedidoDoPack.Itens.Select(item => new PedidoItemDto
+                            {
+                                Sku = item.Sku,
+                                Descrição = item.Item!.Título,
+                                Quantidade = item.QuantidadeVendida,
+                                UrlImagem = item.Item.PrimeiraFoto,
+                                Separados = item.EmbalagemItem?.Separados ?? 0
+                            }));
                         }
                     }
                     else
+                        //Se o pedido não faz parte de um pack
                     {
-                        pedidoEncontrado.PedidoItems = pedido.Itens.Select(x =>
-                            new PedidoItemDto
+                        //Pega os itens desse pedido e joga no DTO
+                            pedidoEncontradoDto.PedidoItems.AddRange(pedido.Itens.Select(item=> new PedidoItemDto
                             {
-                                Sku = x.Sku,
-                                Descrição = x.Item!.Título,
-                                Quantidade = x.QuantidadeVendida,
-                                UrlImagem = x.Item.PrimeiraFoto,
-                                Separados = x.Separação?.Separados ?? 0,
-
-                            }).ToList();
+                                Sku = item.Sku,
+                                Descrição = item.Item!.Título,
+                                Quantidade = item.QuantidadeVendida,
+                                UrlImagem = item.Item.PrimeiraFoto,
+                                Separados = item.EmbalagemItem?.Separados ?? 0 
+                            }));
                     }
-                    pedidoEncontrado.PackId = pedido.PackId;
-                    pedidoEncontrado.SeparadoPor = pedido.Separação?.Usuário?.DisplayName;
-                    pedidoEncontrado.TipoEnvio = pedido.Envio?.TipoEnvio ?? ShipmentType.Desconhecido;
-                    pedidoEncontrado.MlUsername = mlUsers.First(x => x.UserId == pedido.SellerId).AccountNickname;
-                    ((List<PedidoDto>)retornoDto.Dados!).Add(pedidoEncontrado);
+
+                    // Joga o DTO no objeto de retorno.
+                    ((List<PedidoDto>)retornoDto.Dados!).Add(pedidoEncontradoDto);
                 }
 
+                //Retorna o DTO com o(s) registro(s) encontrados.
                 return Ok(new { Registros = maxRecords, retornoDto.Mensagem, Codigo = "OK", Pedidos = retornoDto.Dados });
             }
             else
+            // Caso nenhum registro tenha sido encontrado.
             {
                 RetornoDto retornoDto = new RetornoDto("Nenhum dado encontrado");
                 return Ok(new { Registros = maxRecords, retornoDto.Mensagem, Codigo = "OK", Pedidos = (dynamic?)null });
@@ -265,9 +282,9 @@ namespace MlSuite.Api.Controllers
 
             var pedidoEmSeparação = await context.Pedidos
                 .Include(pedido => pedido.Separação)
-                .ThenInclude(separação => separação!.Usuário)
+                .ThenInclude(separação => separação!.Separador)
                 .Include(pedido => pedido.Itens)
-                .ThenInclude(item => item.Separação)
+                .ThenInclude(item => item.EmbalagemItem)
                 .Include(pedido => pedido.Itens)
                 .ThenInclude(item => item.Item)
                 .Include(pedido => pedido.Envio)
@@ -279,8 +296,8 @@ namespace MlSuite.Api.Controllers
                                  (pedido.Envio.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
                                   pedido.Envio.SubStatus == ShipmentSubStatus.Impresso))
                 .FirstOrDefaultAsync(x => x.Separação != null &&
-                                          x.Separação.Usuário.Uuid == requestingUser.Uuid &&
-                                          x.Itens.Any(y => y.Separação!.Separados != y.QuantidadeVendida)
+                                          x.Separação.Separador.Uuid == requestingUser.Uuid &&
+                                          x.Itens.Any(y => y.EmbalagemItem!.Separados != y.QuantidadeVendida)
                                           //x.Separação.Etiqueta == null //Etiqueta já recebida
                                           );
 

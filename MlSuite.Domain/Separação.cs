@@ -8,11 +8,11 @@ namespace MlSuite.Domain
 {
     public class Separação : EntityBase
     {
-        public UserInfo Gerador { get; set; }
-        public UserInfo Separador { get; set; }
-        public UserInfo Embrulhador { get; set; }
+        public UserInfo? Gerador { get; set; }
+        public UserInfo? Separador { get; set; }
+        public UserInfo? Embrulhador { get; set; }
         public Guid PedidoId { get; set; }
-        public List<Pedido> Pedidos { get; set; }
+        public List<Pedido> Pedidos { get; set; } = new();
         public DateTime Início { get; set; }
         public DateTime Fim { get; set; }
         public string? Etiqueta { get; set; }
@@ -23,9 +23,6 @@ namespace MlSuite.Domain
     {
         Aberta,
         Iniciada,
-        Impressa,
-        Separado,
-        Embalado,
         Finalizado
     }
 }

@@ -28,8 +28,6 @@ namespace MlSuite.EntityFramework.EntityFramework
                 .HasAlternateKey(x => x.Id);
             modelBuilder.Entity<PedidoPagamento>()
                 .HasAlternateKey(x => x.Id);
-            //modelBuilder.Entity<PedidoDestinatário>()
-            //    .HasAlternateKey(x => x.Id);
             modelBuilder.Entity<Item>()
                 .HasAlternateKey(x => x.Id);
             modelBuilder.Entity<ItemVariação>()

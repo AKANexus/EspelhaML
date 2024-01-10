@@ -12,6 +12,7 @@ using MlSuite.Domain.Enums;
 using MlSuite.EntityFramework.EntityFramework;
 using MlSuite.MlApiServiceLib;
 using static MlSuite.Api.Statics.StaticFuncs.Extensions;
+// ReSharper disable StringLiteralTypo
 
 namespace MlSuite.Api.Controllers
 {
@@ -150,7 +151,7 @@ namespace MlSuite.Api.Controllers
         {
             _scopeFactory = scopeFactory;
         }
-        /*
+        
         [HttpGet("criaSeparacao"), Anônimo]
         public async Task<IActionResult> CriaSeparação([FromQuery] string pedidos)
         {
@@ -158,7 +159,10 @@ namespace MlSuite.Api.Controllers
             var context = provider.GetRequiredService<TrilhaDbContext>();
 
             ulong[] pedidoIds = pedidos.Split(',').Select(ulong.Parse).ToArray();
-            Order[] tentativos = await context.Pedidos.Include(x => x.Separação)
+            Order[] tentativos = await context.Pedidos
+                .Include(x=>x.Envio)
+                .Include(x=>x.Itens)
+                .ThenInclude(y=>y.Item)
                 .Where(pedido => pedido.Envio != null &&
                                  pedido.Envio.Status == ShipmentStatus.ProntoParaEnvio &&
                                  pedido.Envio.SubStatusDescrição != "invoice_pending" &&
@@ -177,17 +181,35 @@ namespace MlSuite.Api.Controllers
             };
             foreach (Order tentativo in tentativos)
             {
-                if (tentativo.Separação != null)
+                var separaçãoTentativo = await context.Separações
+                    .Include(x=>x.Embalagens)
+                    .FirstOrDefaultAsync(x => x.Embalagens.Any(y =>
+                        y.ReferenciaId == tentativo.Id && y.TipoVendaMl == TipoVendaMl.Order));
+
+                if (separaçãoTentativo != null)
                 {
                     pedidosInválidos.Add(tentativo.Id);
                 }
                 else
                 {
-                    novaSeparação.Orders.Add(tentativo);
+                    novaSeparação.Embalagens.Add(new Embalagem()
+                    {
+                        TipoVendaMl = TipoVendaMl.Order,
+                        ShippingId = tentativo.Envio!.Id,
+                        ReferenciaId = tentativo.Id,
+                        EmbalagemItems = tentativo.Itens.Select(y=>new EmbalagemItem()
+                        {
+                            SKU = y.Sku,
+                            ImageUrl = y.Item!.PrimeiraFoto,
+                            QuantidadeEscaneada = 0,
+                            QuantidadeAEscanear = y.QuantidadeVendida,
+                            Descrição = y.Título
+                        }).ToList()
+                    });
                 }
             }
 
-            if (novaSeparação.Orders.Count > 0)
+            if (novaSeparação.Embalagens.Count > 0)
             {
                 context.Update(novaSeparação);
                 await context.SaveChangesAsync();
@@ -197,105 +219,28 @@ namespace MlSuite.Api.Controllers
                 new { num_separacao = novaSeparação.Identificador, pedidos_inválidos = pedidosInválidos }));
         }
 
-        [HttpPost("getPedidosFiltered"), Anônimo]
-        public async Task<IActionResult> GetPedidosFiltered([FromBody] FilteredQueryDto? dto)
+        [HttpPost("getSeparacoes"), Anônimo]
+        public async Task<IActionResult> GetSeparações()
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
             var context = provider.GetRequiredService<TrilhaDbContext>();
 
-            IQueryable<Order> query = context.Pedidos
-                .Include(pedido => pedido.Separação)
-                .ThenInclude(separação => separação!.Usuário)
-                .Include(pedido => pedido.Itens)
-                .ThenInclude(item => item.Separação)
-                .Include(pedido => pedido.Itens)
-                .ThenInclude(item => item.Item)
-                .Include(pedido => pedido.Envio)
-                .Include(pedido => pedido.Pack)
-                .ThenInclude(pack => pack.Pedidos)
-                .ThenInclude(packPedido => packPedido.Itens).ThenInclude(orderItem => orderItem.Item)
-                .Include(order => order.Pack).ThenInclude(pack => pack.Pedidos).ThenInclude(order => order.Itens)
-                .ThenInclude(orderItem => orderItem.Separação)
-                .Where(pedido => pedido.Envio != null &&
-                                 pedido.Envio.Status == ShipmentStatus.ProntoParaEnvio &&
-                                 pedido.Envio.SubStatusDescrição != "invoice_pending" &&
-                                 pedido.Envio.SubStatusDescrição != "picked_up" &&
-                                 pedido.Envio.TipoEnvio != ShipmentType.Fulfillment &&
-                                 (pedido.Envio.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
-                                 pedido.Envio.SubStatus == ShipmentSubStatus.Impresso))
-                .ApplyFilters(dto);
+            var separaçõesNaoDesignadas = await context.Separações
+                .Where(x => x.Usuário == null)
+                .ToListAsync();
 
-            int maxRecords = await query.CountAsync();
-            query = query.Skip(Math.Max(dto?.Skip ?? 0, 0)).Take(Math.Min(dto?.Take ?? 15, 15));
-            if (await query.CountAsync() > 0)
+            if (separaçõesNaoDesignadas.Count > 0)
             {
-                RetornoDto retornoDto = new RetornoDto("Pedidos encontrados", new List<PedidoDto>());
-                List<MlUserAuthInfo> mlUsers = await context.MlUserAuthInfos.AsNoTracking().ToListAsync();
-                //List<ulong> packIdList = new();
-                List<Order> queryResult = await query.ToListAsync();
-                foreach (Order pedido in queryResult)
-                {
-                    if (pedido.Pack != null)
-                    {
-                        continue;
-                    }
-                    PedidoDto pedidoEncontrado = new PedidoDto();
-                    pedidoEncontrado.NúmPedido = pedido.Id;
-                    pedidoEncontrado.SeparadoPor = pedido.Separação?.Usuário?.DisplayName;
-                    if (pedido.Pack != null)
-                    {
-                        //packIdList.Add((ulong)pedido.PackId);
-                        //IEnumerable<Order> pedidosDoPack = await context.Pedidos.AsNoTracking()
-                        //    .Where(x => x.PackId == pedido.PackId).Include(pedido => pedido.Itens)
-                        //    .ThenInclude(pedidoItem => pedidoItem.Item).Include(pedido => pedido.Itens)
-                        //    .ThenInclude(pedidoItem => pedidoItem.Separação).ToListAsync();
-
-                        foreach (Order pedidoDoPack in pedido.Pack.Pedidos)
-                        {
-                            pedidoEncontrado.PedidoItems.AddRange(pedidoDoPack.Itens.Select(y =>
-                                new PedidoItemDto
-                                {
-                                    Sku = y.Sku,
-                                    Descrição = y.Item!.Título,
-                                    Quantidade = y.QuantidadeVendida,
-                                    UrlImagem = y.Item.PrimeiraFoto,
-                                    Separados = y.Separação?.Separados ?? 0,
-
-                                }));
-                        }
-                    }
-                    else
-                    {
-                        pedidoEncontrado.PedidoItems = pedido.Itens.Select(x =>
-                            new PedidoItemDto
-                            {
-                                Sku = x.Sku,
-                                Descrição = x.Item!.Título,
-                                Quantidade = x.QuantidadeVendida,
-                                UrlImagem = x.Item.PrimeiraFoto,
-                                Separados = x.Separação?.Separados ?? 0,
-
-                            }).ToList();
-                    }
-                    pedidoEncontrado.PackId = pedido.Pack?.Id;
-                    pedidoEncontrado.SeparadoPor = pedido.Separação?.Usuário?.DisplayName;
-                    pedidoEncontrado.TipoEnvio = pedido.Envio?.TipoEnvio ?? ShipmentType.Desconhecido;
-                    pedidoEncontrado.MlUsername = mlUsers.First(x => x.UserId == pedido.SellerId).AccountNickname;
-                    ((List<PedidoDto>)retornoDto.Dados!).Add(pedidoEncontrado);
-                }
-
-                return Ok(new { Registros = maxRecords, retornoDto.Mensagem, Codigo = "OK", Pedidos = retornoDto.Dados });
-            }
-            else
-            {
-                RetornoDto retornoDto = new RetornoDto("Nenhum dado encontrado");
-                return Ok(new { Registros = maxRecords, retornoDto.Mensagem, Codigo = "OK", Pedidos = (dynamic?)null });
+                var r1 = new RetornoDto("Foram encontradas separações", separaçõesNaoDesignadas);
+                return Ok(r1);
             }
 
+            var r2 = new RetornoDto("Não há separações pendentes");
+            return Ok(r2);
         }
 
-        [HttpGet("pedidoAberto"), Autorizar]
-        public async Task<IActionResult> GetPedidoEmAberto()
+        [HttpGet("separacaoAberta"), Autorizar]
+        public async Task<IActionResult> GetSeparaçãoEmAberto()
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
             var context = provider.GetRequiredService<TrilhaDbContext>();
@@ -314,90 +259,27 @@ namespace MlSuite.Api.Controllers
             {
                 var retorno1 = new RetornoDto("Uuid não foi encontrada.");
                 return Ok(new { retorno1.Mensagem, Codigo = "UUID_NAO_ENCONTRADO" });
+
             }
 
-            var pedidoEmSeparação = await context.Pedidos
-                .Include(pedido => pedido.Separação)
-                .ThenInclude(separação => separação!.Usuário)
-                .Include(pedido => pedido.Itens)
-                .ThenInclude(item => item.Separação)
-                .Include(pedido => pedido.Itens)
-                .ThenInclude(item => item.Item)
-                .Include(pedido => pedido.Envio)
-                .Include(pedido => pedido.Pack)
-                .ThenInclude(pack => pack.Pedidos)
-                .ThenInclude(packPedido => packPedido.Itens).ThenInclude(orderItem => orderItem.Item)
-                .Include(order => order.Pack).ThenInclude(pack => pack.Pedidos).ThenInclude(order => order.Itens)
-                .ThenInclude(orderItem => orderItem.Separação)
-                .Where(pedido => pedido.Envio != null &&
-                                 pedido.Envio.Status == ShipmentStatus.ProntoParaEnvio &&
-                                 pedido.Envio.SubStatusDescrição != "invoice_pending" &&
-                                 pedido.Envio.SubStatusDescrição != "picked_up" &&
-                                 pedido.Envio.TipoEnvio != ShipmentType.Fulfillment &&
-                                 (pedido.Envio.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
-                                  pedido.Envio.SubStatus == ShipmentSubStatus.Impresso))
-                .FirstOrDefaultAsync(x => x.Separação != null &&
-                                          x.Separação.Usuário.Uuid == requestingUser.Uuid &&
-                                          x.Itens.Any(y => y.Separação!.Separados != y.QuantidadeVendida)
-                                          //x.Separação.Etiqueta == null //Etiqueta já recebida
-                                          );
-
-            if (pedidoEmSeparação != null)
+            var separaçãoAberta = await context.Separações
+                .Include(x=>x.Embalagens)
+                .ThenInclude(y=>y.EmbalagemItems)
+                .FirstOrDefaultAsync(separação =>
+                    separação.Usuário == requestingUser &&
+                    separação.Embalagens.Any(x=>x.StatusEmbalagem != StatusEmbalagem.Impresso));
+            if (separaçãoAberta != null)
             {
-                List<MlUserAuthInfo> mlUsers = await context.MlUserAuthInfos.AsNoTracking().ToListAsync();
-
-                PedidoDto pedidoEmSeparaçãoDto = new PedidoDto();
-                pedidoEmSeparaçãoDto.NúmPedido = pedidoEmSeparação.Id;
-                pedidoEmSeparaçãoDto.SeparadoPor = pedidoEmSeparação.Separação?.Usuário?.DisplayName;
-                pedidoEmSeparaçãoDto.TipoEnvio = pedidoEmSeparação.Envio?.TipoEnvio ?? ShipmentType.Desconhecido;
-                pedidoEmSeparaçãoDto.MlUsername = mlUsers.First(x => x.UserId == pedidoEmSeparação.SellerId).AccountNickname;
-
-
-                if (pedidoEmSeparação.Pack != null)
-                {
-                    //IEnumerable<Order> pedidosDoPack = await context.Pedidos
-                    //    .Where(x => x.PackId == pedidoEmSeparação.PackId).Include(pedido => pedido.Itens)
-                    //    .ThenInclude(pedidoItem => pedidoItem.Item).Include(pedido => pedido.Itens)
-                    //    .ThenInclude(pedidoItem => pedidoItem.Separação).ToListAsync();
-                    foreach (Order pedidoDoPack in pedidoEmSeparação.Pack.Pedidos)
-                    {
-                        pedidoEmSeparaçãoDto.PedidoItems.AddRange(pedidoDoPack.Itens.Select(y =>
-                            new PedidoItemDto
-                            {
-                                Sku = y.Sku,
-                                Descrição = y.Item!.Título,
-                                Quantidade = y.QuantidadeVendida,
-                                UrlImagem = y.Item.PrimeiraFoto,
-                                Separados = y.Separação?.Separados ?? 0,
-
-                            }));
-                    }
-                }
-                else
-                {
-                    pedidoEmSeparaçãoDto.PedidoItems = pedidoEmSeparação.Itens.Select(x =>
-                        new PedidoItemDto
-                        {
-                            Sku = x.Sku,
-                            Descrição = x.Item!.Título,
-                            Quantidade = x.QuantidadeVendida,
-                            UrlImagem = x.Item.PrimeiraFoto,
-                            Separados = x.Separação?.Separados ?? 0
-
-                        }).ToList();
-                }
-
-                pedidoEmSeparaçãoDto.PackId = pedidoEmSeparação.Pack.Id;
-                var retorno3 = new RetornoDto("Pedido em separação encontrado!", pedidoEmSeparaçãoDto);
-                return Ok(new { retorno3.Registros, retorno3.Mensagem, Codigo = "OK", Pedidos = new PedidoDto[] { retorno3.Dados! } });
+                var r1 = new RetornoDto("Há uma separação em aberto", separaçãoAberta);
+                return Ok(r1);
             }
 
-            var retorno2 = new RetornoDto("Nenhum pedido em separação encontrado.");
-            return Ok(new { retorno2.Mensagem, Codigo = "NENHUM_PEDIDO_EM_SEPARACAO" });
+            var r2 = new RetornoDto("Não há separações em aberto");
+            return Ok(r2);
         }
 
         [HttpPost("processaSku"), Autorizar]
-        public async Task<IActionResult> ProcessaSku([FromQuery] string sku, [FromQuery] ulong idSeparação)
+        public async Task<IActionResult> ProcessaSku([FromQuery] string sku, [FromQuery] ulong idSeparacao)
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
             var context = provider.GetRequiredService<TrilhaDbContext>();
@@ -405,8 +287,8 @@ namespace MlSuite.Api.Controllers
             object? userUuid = HttpContext.Items["user_info"];
             if (userUuid is not UserInfo userInfo)
             {
-                var retorno1 = new RetornoDto("Uuid não foi determinada.");
-                return Ok(new { retorno1.Mensagem, Codigo = "UUID_NAO_DETERMINADO" });
+                var r1 = new RetornoDto("Uuid não foi determinada.");
+                return Ok(new { r1.Mensagem, Codigo = "UUID_NAO_DETERMINADO" });
             }
 
             UserInfo? requestingUser = await context.Usuários.FirstOrDefaultAsync(x =>
@@ -414,508 +296,213 @@ namespace MlSuite.Api.Controllers
 
             if (requestingUser == null)
             {
-                var retorno1 = new RetornoDto("Uuid não foi encontrada.");
-                return Ok(new { retorno1.Mensagem, Codigo = "UUID_NAO_ENCONTRADO" });
+                var r2 = new RetornoDto("Uuid não foi encontrada.");
+                return Ok(new { r2.Mensagem, Codigo = "UUID_NAO_ENCONTRADO" });
 
             }
-            List<MlUserAuthInfo> mlUsers = await context.MlUserAuthInfos.AsNoTracking().ToListAsync();
+
+            var workingSeparação = await context.Separações
+                .Include(x => x.Embalagens)
+                .ThenInclude(y => y.EmbalagemItems)
+                .Include(x=>x.Usuário)
+                .FirstOrDefaultAsync(separação => separação.Identificador == idSeparacao);
 
 
-
-            //Verificar se existe uma separação em andamento que não seja do idSeparação informado
-                //Se houver, o sistema informa o número da separação já em aberto
-                //Se não, o sistema seta a separação indicada como "em aberto"
-                
-            //Verificar se já há um pacote em andamento
-                //Se houver
-                    //Verificar se o sku perte
-                //Se não, iniciar um novo pacote
-
-            //Verifica se já há alguma embalagem em aberto:
-            var pedidoEmSeparação = await context.Pedidos
-                .Include(pedido => pedido.Separação)
-                .ThenInclude(separação => separação!.Usuário)
-                .Include(pedido => pedido.Itens)
-                .ThenInclude(item => item.Separação)
-                .Include(pedido => pedido.Itens)
-                .ThenInclude(item => item.Item)
-                .Include(pedido => pedido.Envio)
-                .Include(pedido => pedido.Pack)
-                .ThenInclude(pack => pack.Pedidos)
-                .ThenInclude(packPedido => packPedido.Itens).ThenInclude(orderItem => orderItem.Item)
-                .Include(order => order.Pack).ThenInclude(pack => pack.Pedidos).ThenInclude(order => order.Itens)
-                .ThenInclude(orderItem => orderItem.Separação)
-                //.Where(pedido => pedido.Envio != null &&
-                //                 pedido.Envio.Status == ShipmentStatus.ProntoParaEnvio &&
-                //                 pedido.Envio.SubStatusDescrição != "invoice_pending" &&
-                //                 pedido.Envio.SubStatusDescrição != "picked_up" &&
-                //                 pedido.Envio.TipoEnvio != ShipmentType.Fulfillment &&
-                //                 (pedido.Envio.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
-                //                  pedido.Envio.SubStatus == ShipmentSubStatus.Impresso))
-                .Where(pedido=>pedido.Separação != null && pedido.Separação.Identificador == idSeparação)
-                .FirstOrDefaultAsync(x => x.Separação != null &&
-                                          x.Separação.Usuário.Uuid == requestingUser.Uuid &&
-                                            x.Itens.Any(y => y.Separação!.Separados != y.QuantidadeVendida
-                                          //x.Separação.Etiqueta == null //Pedido está finalizado se etiqueta foi gerada
-                                          ));
-
-            if (pedidoEmSeparação != null)
+            if (workingSeparação == null)
             {
-                PedidoDto pedidoEmSeparaçãoDto = new PedidoDto();
-                pedidoEmSeparaçãoDto.NúmPedido = pedidoEmSeparação.Id;
-                pedidoEmSeparaçãoDto.SeparadoPor = pedidoEmSeparação.Separação?.Usuário?.DisplayName;
-                pedidoEmSeparaçãoDto.TipoEnvio = pedidoEmSeparação.Envio?.TipoEnvio ?? ShipmentType.Desconhecido;
-                pedidoEmSeparaçãoDto.MlUsername = mlUsers.First(x => x.UserId == pedidoEmSeparação.SellerId).AccountNickname;
-
-
-                if (pedidoEmSeparação.Pack != null)
-                {
-                    pedidoEmSeparaçãoDto.PackId = pedidoEmSeparação.Pack.Id;
-                    foreach (Order pedidoDoPack in pedidoEmSeparação.Pack.Pedidos)
-                    {
-                        pedidoEmSeparaçãoDto.PedidoItems.AddRange(pedidoDoPack.Itens.Select(y =>
-                            new PedidoItemDto
-                            {
-                                Sku = y.Sku,
-                                Descrição = y.Item!.Título,
-                                Quantidade = y.QuantidadeVendida,
-                                UrlImagem = y.Item.PrimeiraFoto,
-                                Separados = y.Separação?.Separados ?? 0,
-
-                            }));
-                    }
-                }
-                else
-                {
-                    pedidoEmSeparaçãoDto.PedidoItems = pedidoEmSeparação.Itens.Select(x =>
-                        new PedidoItemDto
-                        {
-                            Sku = x.Sku,
-                            Descrição = x.Item!.Título,
-                            Quantidade = x.QuantidadeVendida,
-                            UrlImagem = x.Item.PrimeiraFoto,
-                            Separados = x.Separação?.Separados ?? 0
-
-                        }).ToList();
-                }
-
-                if (pedidoEmSeparação.Itens.All(x => x.Sku != sku))
-                {
-                    var retorno1 = new RetornoDto("SKU informado não pertence ao pedido em separação", pedidoEmSeparaçãoDto);
-                    return Ok(new
-                    {
-                        retorno1.Registros,
-                        retorno1.Mensagem,
-                        Codigo = "SKU_NAO_PERTENCE_A_PEDIDO",
-                        pedidos = new PedidoDto[] { retorno1.Dados! }
-                    });
-                }
-
-                var itemSeparado1 = pedidoEmSeparação.Itens.First(x => x.Sku == sku);
-                itemSeparado1.Separação ??= new SeparaçãoItem();
-                if (itemSeparado1.Separação.Separados == itemSeparado1.QuantidadeVendida)
-                {
-                    if (pedidoEmSeparação.Itens.All(x => x.Separação != null && x.QuantidadeVendida == x.Separação.Separados))
-                    {
-                        var retornoPedido = new RetornoDto("Esse pedido já está concluído", pedidoEmSeparaçãoDto);
-                        return Ok(new
-                        {
-                            retornoPedido.Registros,
-                            retornoPedido.Mensagem,
-                            Codigo = "PEDIDO_TOTALMENTE_SEPARADO",
-                            pedidos = new PedidoDto[]
-                                { retornoPedido.Dados! }
-                        });
-                    }
-
-                    var retornoSku = new RetornoDto("Esse SKU já foi escaneado totalmente", pedidoEmSeparaçãoDto);
-                    return Ok(new
-                    {
-                        retornoSku.Registros,
-                        retornoSku.Mensagem,
-                        Codigo = "SKU_TOTALMENTE_ESCANEADO",
-                        pedidos = new PedidoDto[]
-                            { retornoSku.Dados! }
-                    });
-                }
-                itemSeparado1.Separação.Separados++;
-
-                pedidoEmSeparaçãoDto.NúmPedido = pedidoEmSeparação.Id;
-                pedidoEmSeparaçãoDto.SeparadoPor = pedidoEmSeparação.Separação?.Usuário?.DisplayName;
-                pedidoEmSeparaçãoDto.PedidoItems = pedidoEmSeparação.Itens.Select(x =>
-                    new PedidoItemDto
-                    {
-                        Sku = x.Sku,
-                        Descrição = x.Item!.Título,
-                        Quantidade = x.QuantidadeVendida,
-                        UrlImagem = x.Item.PrimeiraFoto,
-                        Separados = x.Separação?.Separados ?? 0
-
-                    }).ToList();
-
-                context.Update(pedidoEmSeparação);
-                try
-                {
-                    await context.SaveChangesAsync();
-                }
-                catch (Exception e)
-                {
-                    return StatusCode(500, e);
-                }
-
-                if (pedidoEmSeparaçãoDto.PedidoItems.All(x => x.Separados == x.Quantidade))
-                {
-                    var retornoPedido = new RetornoDto("Esse pedido já está concluído", pedidoEmSeparaçãoDto);
-                    return Ok(new
-                    {
-                        retornoPedido.Registros,
-                        retornoPedido.Mensagem,
-                        Codigo = "PEDIDO_TOTALMENTE_SEPARADO",
-                        pedidos = new PedidoDto[]
-                            { retornoPedido.Dados! }
-                    });
-                }
-
-                var retorno2 = new RetornoDto("Pedido em separação encontrado", pedidoEmSeparaçãoDto);
-                return Ok(new
-                {
-                    retorno2.Registros,
-                    retorno2.Mensagem,
-                    Codigo = "OK",
-                    pedidos = new PedidoDto[]
-                        { retorno2.Dados! }
-                });
+                var r4 = new RetornoDto("ID separação inválido", null, "SEPARACAO_NAO_ENCONTRADA");
+                return Ok(r4);
             }
 
-            var pedidoTentativo = await context.Pedidos
-                .Include(pedido => pedido.Itens)
-                .ThenInclude(pedidoItem => pedidoItem.Item)
-                .Include(pedido => pedido.Itens)
-                .ThenInclude(pedidoItem => pedidoItem.Separação).Include(pedido => pedido.Envio)
-                .Include(pedido => pedido.Pack)
-                .ThenInclude(pack => pack.Pedidos)
-                .ThenInclude(packPedido => packPedido.Itens).ThenInclude(orderItem => orderItem.Item)
-                .Include(order => order.Pack).ThenInclude(pack => pack.Pedidos).ThenInclude(order => order.Itens)
-                .ThenInclude(orderItem => orderItem.Separação)
-                .Where(pedido => pedido.Envio != null &&
-                                 pedido.Envio.Status == ShipmentStatus.ProntoParaEnvio &&
-                                 pedido.Envio.SubStatusDescrição != "invoice_pending" &&
-                                 pedido.Envio.SubStatusDescrição != "picked_up" &&
-                                 pedido.Envio.TipoEnvio != ShipmentType.Fulfillment &&
-                                 (pedido.Envio.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
-                                  pedido.Envio.SubStatus == ShipmentSubStatus.Impresso))
-                .Where(x => x.Itens.Any(y => y.Sku == sku) && x.Separação == null)
-                .OrderBy(x => x.CreatedAt)
-                .FirstOrDefaultAsync();
-
-            if (pedidoTentativo == null)
+            if (workingSeparação.Usuário != requestingUser)
             {
-                var retorno1 = new RetornoDto("Nenhum pedido com o sku informado foi encontrado.");
-                return Ok(new { retorno1.Mensagem, Codigo = "NENHUM_PEDIDO_ENCONTRADO" });
+                var r4 = new RetornoDto("Essa separação está sendo tratada por outro usuário", null, "SEPARACAO_DE_OUTRO_USUARIO");
+                return Ok(r4);
             }
 
-            var itemSeparado2 = pedidoTentativo.Itens.First(x => x.Sku == sku);
-            itemSeparado2.Separação ??= new SeparaçãoItem();
-            if (itemSeparado2.Separação.Separados == itemSeparado2.QuantidadeVendida)
+            var separaçãoEmAberto = await context.Separações
+                .Include(x => x.Embalagens)
+                .Include(x => x.Usuário)
+                .FirstOrDefaultAsync(separação =>
+                    separação.Usuário == requestingUser &&
+                    separação.Embalagens.Any(x => x.StatusEmbalagem != StatusEmbalagem.Impresso) &&
+                    separação.Identificador != idSeparacao);
+
+            if (separaçãoEmAberto != null)
             {
-                var retorno1 = new RetornoDto("Esse SKU já foi escaneado totalmente.");
-                return Ok(new { retorno1.Mensagem, Codigo = "SKU_TOTALMENTE_ESCANEADO" });
+                var r3 = new RetornoDto("Usuário já está com outra separação em aberto", separaçãoEmAberto, "SEPARACAO_EM_ANDAMENTO");
+                return Ok(r3);
             }
-            itemSeparado2.Separação.Separados++;
-
-            PedidoDto novoPedidoDto = new PedidoDto();
-            novoPedidoDto.NúmPedido = pedidoTentativo.Id;
-            novoPedidoDto.TipoEnvio = pedidoTentativo.Envio?.TipoEnvio ?? ShipmentType.Desconhecido;
-            novoPedidoDto.MlUsername = mlUsers.First(x => x.UserId == pedidoTentativo.SellerId).AccountNickname;
 
 
-
-
-            if (pedidoTentativo.Pack != null)
+            var workingEmbalagem =
+                workingSeparação.Embalagens.FirstOrDefault(x => x.StatusEmbalagem == StatusEmbalagem.Iniciado);
+            if (workingEmbalagem != null)
             {
-                novoPedidoDto.PackId = pedidoTentativo.Pack.Id;
-                foreach (Order pedidoDoPack in pedidoTentativo.Pack.Pedidos)
+                //Verificar se o SKU está nessa embalagem
+                if (workingEmbalagem.EmbalagemItems.All(x => x.SKU != sku))
                 {
-                    novoPedidoDto.PedidoItems.AddRange(pedidoDoPack.Itens.Select(y =>
-                        new PedidoItemDto
-                        {
-                            Sku = y.Sku,
-                            Descrição = y.Item!.Título,
-                            Quantidade = y.QuantidadeVendida,
-                            UrlImagem = y.Item.PrimeiraFoto,
-                            Separados = y.Separação?.Separados ?? 0,
-
-                        }));
+                    var r5 = new RetornoDto("O SKU informado não pertence a essa embalagem", null,
+                        "SKU_NAO_ENCONTRADO");
+                    return Ok(r5);
                 }
+
+                if (workingEmbalagem.EmbalagemItems.Where(x => x.SKU == sku)
+                    .All(x => x.QuantidadeEscaneada == x.QuantidadeAEscanear))
+                {
+                    var r6 = new RetornoDto("A quantidade necessária desse item já foi escaneada", null,
+                        "QUANTIDADE_MAXIMA_ATINGIDA");
+                    return Ok(r6);
+                }
+
+                var embalagemItemTentativo = workingEmbalagem.EmbalagemItems.First(x =>
+                    x.SKU == sku && x.QuantidadeEscaneada < x.QuantidadeAEscanear);
+
+                embalagemItemTentativo.QuantidadeEscaneada++;
             }
+
             else
             {
-                novoPedidoDto.PedidoItems = pedidoTentativo.Itens.Select(x =>
-                    new PedidoItemDto
+                //Verificar se o SKU digitado pertence a alguma embalagem da separação
+                workingEmbalagem =
+                    workingSeparação.Embalagens.FirstOrDefault(x => x.EmbalagemItems.Any(y => y.SKU == sku));
+
+                if (workingEmbalagem == null)
+                {
+                    var r7 = new RetornoDto("O sku informado não pertence a essa embalagem");
+                    return Ok(r7);
+                }
+
+                workingEmbalagem.EmbalagemItems.First(x => x.SKU == sku).QuantidadeEscaneada++;
+                workingEmbalagem.StatusEmbalagem = StatusEmbalagem.Aberto;
+            }
+            
+            //Verificar se a embalagem finalizou
+            if (workingEmbalagem.EmbalagemItems.All(x => x.QuantidadeEscaneada == x.QuantidadeAEscanear))
+            {
+                //Embalagem finalizou
+
+                //Obtém etiqueta
+                var mlUserInfo = await context.MlUserAuthInfos.FirstOrDefaultAsync(x => x.UserId == workingSeparação.SellerId);
+                var mlApiService = new MlApiService(Secrets.ClientId, Secrets.SmtpPassword, Secrets.RedirectUrl);
+
+                if (mlUserInfo == null)
+                {
+                    return StatusCode(500, new
                     {
-                        Sku = x.Sku,
-                        Descrição = x.Item.Título,
-                        Quantidade = x.QuantidadeVendida,
-                        UrlImagem = x.Item.PrimeiraFoto,
-                        Separados = x.Separação?.Separados ?? 0
+                        Mensagem = "Ocorreu uma falha ao obter a access key do ML",
+                        Codigo = "FALHA_ACCESS_KEY_ML"
+                    });
+                }
 
-                    }).ToList();
-            }
+                var respostaEtiqueta =
+                    await mlApiService.GetLabelByShipment(mlUserInfo.AccessToken, workingEmbalagem.ShippingId.ToString());
 
-
-
-
-            novoPedidoDto.SeparadoPor = requestingUser.DisplayName;
-
-            pedidoTentativo.Separação = new Separação()
-            {
-                Início = DateTime.Now,
-                Usuário = requestingUser
-            };
-
-            context.Update(pedidoTentativo);
-            try
-            {
-                await context.SaveChangesAsync();
-            }
-            catch (Exception e)
-            {
-                return StatusCode(500, e);
-            }
-
-            if (novoPedidoDto.PedidoItems.All(x => x.Separados == x.Quantidade))
-            {
-                var retornoPedido = new RetornoDto("Esse pedido já está concluído", novoPedidoDto);
-                return Ok(new
+                if (respostaEtiqueta.data == null)
                 {
-                    retornoPedido.Registros,
-                    retornoPedido.Mensagem,
-                    Codigo = "PEDIDO_TOTALMENTE_SEPARADO",
-                    pedidos = new PedidoDto[]
-                        { retornoPedido.Dados! }
-                });
+                    return StatusCode(200, new
+                    {
+                        Etiqueta = respostaEtiqueta.message,
+                        Mensagem = respostaEtiqueta.message,
+                        Codigo = "FALHA_ETIQUETA_ENVIO",
+                    });
+                }
+
+                string tempFolderPath = Path.Combine(Path.GetTempPath(), "MlSuite");
+                Directory.CreateDirectory(tempFolderPath);
+
+                string tempFilePath = Path.Combine(tempFolderPath, $"{workingEmbalagem.ShippingId}.zip");
+                await System.IO.File.WriteAllBytesAsync(tempFilePath, respostaEtiqueta.data);
+
+                string unzipPath = Path.Combine(tempFolderPath, $"Unzipped{workingEmbalagem.ShippingId}");
+                System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, unzipPath);
+
+                string etiquetaFilePath = Path.Combine(unzipPath, "Etiqueta de envio.txt");
+                string etiquetaContent = await System.IO.File.ReadAllTextAsync(etiquetaFilePath);
+
+                System.IO.File.Delete(tempFilePath);
+                System.IO.Directory.Delete(unzipPath, true);
+
+                //Grava etiqueta na Embalagem
+                workingEmbalagem.Etiqueta = etiquetaContent;
+
+                //Altera status embalagem para "Impresso"
+                workingEmbalagem.StatusEmbalagem = StatusEmbalagem.Impresso;
+                
+                //Retorna embalagem com etiqueta
+                var r8 = new RetornoDto("Embalagem finalizada com sucesso!", workingEmbalagem);
+                return Ok(r8);
             }
 
-            var retorno3 = new RetornoDto("Pedido em separação iniciado", novoPedidoDto);
-            return Ok(new
+            //Se não
+            else
             {
-                retorno3.Registros,
-                retorno3.Mensagem,
-                Codigo = "OK",
-                pedidos = new PedidoDto[]
-                    { retorno3.Dados! }
-            });
+                //Embalagem ainda não finalizou
+                //Retorna "Item adicionado com sucesso" + embalagem
+                var r9 = new RetornoDto("Embalagem em processo de separação", workingEmbalagem);
+                return Ok(r9);
+            }
+            
         }
 
-        [HttpGet("imprimeEtiqueta"), Autorizar, EnableCors]
-        public async Task<IActionResult> ImprimeEtiqueta([FromQuery] ulong? numPedido)
+        [HttpGet("verificaSeparacao"), Autorizar]
+        public async Task<IActionResult> VerificaSeparação([FromQuery] ulong idSeparacao)
         {
-            Response.Headers.AccessControlAllowOrigin = "*";
             var provider = _scopeFactory.CreateScope().ServiceProvider;
             var context = provider.GetRequiredService<TrilhaDbContext>();
 
-            if (numPedido == null)
+            object? userUuid = HttpContext.Items["user_info"];
+            if (userUuid is not UserInfo userInfo)
             {
-                return BadRequest(new
-                {
-                    Mensagem = "O número do pedido estava em um formato incorreto",
-                    Codigo = "NUM_PEDIDO_FORMATO_INCORRETO"
-                });
+                var r1 = new RetornoDto("Uuid não foi determinada.");
+                return Ok(new { r1.Mensagem, Codigo = "UUID_NAO_DETERMINADO" });
             }
 
-            var pedidoAImprimir = await context.Pedidos.AsNoTracking()
-                .Include(x => x.Envio)
-                .FirstOrDefaultAsync(x => x.Id == numPedido);
+            UserInfo? requestingUser = await context.Usuários.FirstOrDefaultAsync(x =>
+                x.Uuid == userInfo.Uuid);
 
-            if (pedidoAImprimir == null)
+            if (requestingUser == null)
             {
-                return BadRequest(new
-                {
-                    Mensagem = "O número do pedido não corresponde a um pedido válido",
-                    Codigo = "PEDIDO_NAO_ENCONTRADO"
-                });
+                var r2 = new RetornoDto("Uuid não foi encontrada.");
+                return Ok(new { r2.Mensagem, Codigo = "UUID_NAO_ENCONTRADO" });
+
             }
 
-            if (pedidoAImprimir.Envio == null)
+            var workingSeparação = await context.Separações
+                .Include(x => x.Embalagens)
+                .ThenInclude(y => y.EmbalagemItems)
+                .Include(x=>x.Usuário)
+                .FirstOrDefaultAsync(separação => separação.Identificador == idSeparacao);
+
+
+            if (workingSeparação == null)
             {
-                return StatusCode(500, new
-                {
-                    Mensagem = "Ocorreu uma falha ao obter as informações de envio",
-                    Codigo = "FALHA_INFO_ENVIO"
-                });
+                var r4 = new RetornoDto("ID separação inválido", null, "SEPARACAO_NAO_ENCONTRADA");
+                return Ok(r4);
             }
 
-            var mlUserInfo = await context.MlUserAuthInfos.FirstOrDefaultAsync(x => x.UserId == pedidoAImprimir.SellerId);
-            var mlApiService = new MlApiService(Secrets.ClientId, Secrets.SmtpPassword, Secrets.RedirectUrl);
-
-            if (mlUserInfo == null)
+            if (workingSeparação.Usuário != requestingUser)
             {
-                return StatusCode(500, new
-                {
-                    Mensagem = "Ocorreu uma falha ao obter a access key do ML",
-                    Codigo = "FALHA_ACCESS_KEY_ML"
-                });
+                var r4 = new RetornoDto("Essa separação está sendo tratada por outro usuário", null, "SEPARACAO_DE_OUTRO_USUARIO");
+                return Ok(r4);
             }
 
-            var respostaEtiqueta =
-                await mlApiService.GetLabelByShipment(mlUserInfo.AccessToken, pedidoAImprimir.Envio.Id.ToString());
+            var separaçãoEmAberto = await context.Separações
+                .Include(x => x.Embalagens)
+                .Include(x => x.Usuário)
+                .FirstOrDefaultAsync(separação =>
+                    separação.Usuário == requestingUser &&
+                    separação.Embalagens.Any(x => x.StatusEmbalagem != StatusEmbalagem.Impresso) &&
+                    separação.Identificador != idSeparacao);
 
-            if (respostaEtiqueta.data == null)
+            if (separaçãoEmAberto != null)
             {
-                return StatusCode(200, new
-                {
-                    Etiqueta = respostaEtiqueta.message,
-                    Mensagem = respostaEtiqueta.message,
-                    Codigo = "FALHA_ETIQUETA_ENVIO",
-                });
+                var r3 = new RetornoDto("Usuário já está com outra separação em aberto", separaçãoEmAberto, "SEPARACAO_EM_ANDAMENTO");
+                return Ok(r3);
             }
 
-            string tempFolderPath = Path.Combine(Path.GetTempPath(), "MlSuite");
-            Directory.CreateDirectory(tempFolderPath);
-
-            string tempFilePath = Path.Combine(tempFolderPath, $"{pedidoAImprimir.Envio.Id}.zip");
-            await System.IO.File.WriteAllBytesAsync(tempFilePath, respostaEtiqueta.data);
-
-            string unzipPath = Path.Combine(tempFolderPath, $"Unzipped{pedidoAImprimir.Envio.Id}");
-            System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, unzipPath);
-
-            string etiquetaFilePath = Path.Combine(unzipPath, "Etiqueta de envio.txt");
-            string etiquetaContent = await System.IO.File.ReadAllTextAsync(etiquetaFilePath);
-
-            System.IO.File.Delete(tempFilePath);
-            System.IO.Directory.Delete(unzipPath, true);
-
-            var pedidoASalvar = await context.Pedidos
-                .Include(x => x.Separação)
-                .FirstAsync(x => x.Id == numPedido);
-
-            pedidoASalvar.Separação!.Etiqueta = etiquetaContent;
-            context.Update(pedidoASalvar);
-            await context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                Mensagem = "Etiqueta gerada com sucesso!",
-                Etiqueta = etiquetaContent,
-                Codigo = "OK"
-            });
+            var r5 = new RetornoDto("Separação pronta para ser embalada", workingSeparação);
+            return Ok(r5);
         }
-        */
-        /*
-        [HttpGet("imprimeEtiquetaDebug"), Anônimo]
-        public async Task<IActionResult> ImprimeEtiquetaDebug([FromQuery] ulong? numPedido)
-        {
-            if (!Request.Headers.TryGetValue("debugPassword", out StringValues values) || values[0] != "BATATAFRITA")
-            {
-                return Unauthorized();
-            }
-            var provider = _scopeFactory.CreateScope().ServiceProvider;
-            var context = provider.GetRequiredService<TrilhaDbContext>();
-
-            if (numPedido == null)
-            {
-                return BadRequest(new
-                {
-                    Mensagem = "O número do pedido estava em um formato incorreto",
-                    Codigo = "NUM_PEDIDO_FORMATO_INCORRETO"
-                });
-            }
-
-            var pedidoAImprimir = await context.Pedidos.AsNoTracking()
-                .Include(x => x.Envio)
-                .FirstOrDefaultAsync(x => x.Id == numPedido);
-
-            if (pedidoAImprimir == null)
-            {
-                return BadRequest(new
-                {
-                    Mensagem = "O número do pedido não corresponde a um pedido válido",
-                    Codigo = "PEDIDO_NAO_ENCONTRADO"
-                });
-            }
-
-            if (pedidoAImprimir.Envio == null)
-            {
-                return StatusCode(500, new
-                {
-                    Mensagem = "Ocorreu uma falha ao obter as informações de envio",
-                    Codigo = "FALHA_INFO_ENVIO"
-                });
-            }
-
-            var mlUserInfo = await context.MlUserAuthInfos.FirstOrDefaultAsync(x => x.UserId == pedidoAImprimir.SellerId);
-            var mlApiService = new MlApiService(Secrets.ClientId, Secrets.SmtpPassword, Secrets.RedirectUrl);
-
-            if (mlUserInfo == null)
-            {
-                return StatusCode(500, new
-                {
-                    Mensagem = "Ocorreu uma falha ao obter a access key do ML",
-                    Codigo = "FALHA_ACCESS_KEY_ML"
-                });
-            }
-
-            var respostaEtiqueta =
-                await mlApiService.GetLabelByShipment(mlUserInfo.AccessToken, pedidoAImprimir.Envio.Id.ToString());
-
-            if (respostaEtiqueta.data == null)
-            {
-                return StatusCode(200, new
-                {
-                    Etiqueta = respostaEtiqueta.message,
-                    Mensagem = respostaEtiqueta.message,
-                    Codigo = "FALHA_ETIQUETA_ENVIO",
-                });
-            }
-
-            string tempFolderPath = Path.Combine(Path.GetTempPath(), "MlSuite");
-            Directory.CreateDirectory(tempFolderPath);
-
-            string tempFilePath = Path.Combine(tempFolderPath, $"{pedidoAImprimir.Envio.Id}.zip");
-            await System.IO.File.WriteAllBytesAsync(tempFilePath, respostaEtiqueta.data);
-
-            string unzipPath = Path.Combine(tempFolderPath, $"Unzipped{pedidoAImprimir.Envio.Id}");
-            System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, unzipPath);
-
-            string etiquetaFilePath = Path.Combine(unzipPath, "Etiqueta de envio.txt");
-            string etiquetaContent = await System.IO.File.ReadAllTextAsync(etiquetaFilePath);
-
-            System.IO.File.Delete(tempFilePath);
-            System.IO.Directory.Delete(unzipPath, true);
-
-            var pedidoASalvar = await context.Pedidos
-                .Include(x => x.Separação)
-                .FirstAsync(x => x.Id == numPedido);
-
-            pedidoASalvar.Separação!.Etiqueta = etiquetaContent;
-            context.Update(pedidoASalvar);
-            await context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                Mensagem = "Etiqueta gerada com sucesso!",
-                Etiqueta = etiquetaContent,
-                Codigo = "OK"
-            });
-        }
-
-        [HttpGet("imprimeEtiquetaTesting"), Autorizar, EnableCors]
-        public async Task<IActionResult> ImprimeEtiquetaTesting([FromQuery] ulong? numPedido)
-        {
-
-            if (numPedido != 6969420)
-            {
-                return Ok(new
-                {
-                    Mensagem = "Este pedido não tem etiqueta a ser impressa.",
-                    Codigo = "NENHUMA_ETIQUETA_ENCONTRADA"
-                });
-            }
-
-            var retorno = new RetornoDto("Etiqueta gerada com sucesso",
-                "^XA\n^MCY\n^CI28\n^LH5,15\n^FX  HEADER  ^FS\n^FX Logo_Meli ^FS\n^FO20,10^GFA,800,800,10,,:::::::::::O0FF,M07JFE,L07FC003FE,K07EL07E,J01EN078,J07P0E,I01CP038,I07R0E,001CK01FK038,003L0IFK0C,0078J03803CJ0E,0187J06I07I01D8,0300F00F8J0FEFE0C,02003IFK01J06,04I01C6P02,08K0401FM01,1L08060CM083K0100C02M0C2M01001M046K0306I0CL064K0198I02L024Q01L02CR08K03CR04K03FR02K03FFQ01J07!C1FQ0C007E3C03EP0203F03C0078O010F003CI0EF1N0F8003CI070C4M06I03CI02003CL02I03CI02P02I036I03N0106I066I01J08J0C4I067J0EI08J078I0E38I03I0E00406I01C3CI01800100204I01C3CJ0FI080118I03C1EJ03800801FJ0780FK0C008018J0F,078J07C0823J01F,07EJ01C1C36J07E,03FK031C3K0FC,01FCJ01E18J01F8,00FER07F,007F8P01FE,003FFP0FFC,I0FFEN07FF,I03FFCL03FFC,J0IFCJ03IF,J07PFE,K0PF,K01NF8,L01LF8,N0JF,,:::::::::::^FS\n^FO120,20^A0N,24,24^FH^FDDigitron Distribuidora Tecnologicas Ltda ^FS\n^FO120,43^A0N,24,24^FH^FB550,2,0,L^FDAv_2E Pref_2E Jo_C3_A3o Vila_2DLobos Quero 1560, Jardim Itaquiti^FS\n^FO120,90^A0N,24,24^FH^FB550,1,0,L^FDBarueri, BR-SP - 06422122^FS\n^FO120,120^A0N,24,24^FDPack ID: 20000^FS\n^FO272,117^A0N,27,27^FD04602471243^FS\n^FX LAST CLUSTER  ^FS\n^FO20,150^GB210,45,45^FS\n^FO20,156^A0N,45,45^FB210,1,0,C^FR^FDXSP1^FS\n^FX END LAST CLUSTER  ^FS\n^FO480,150^GB330,40,40^FS\n^FO410,160^A0N,22,22^FB460,1,0,C^FR^FH^FDENTREGAR NA COLETA^FS\n^FX  Shipment_Number_Bar_Code  ^FS\n^FO230,210^BY3,,0^BCN,160,N,N,N^FD>:42413378328^FS\n^FO95,385^A0N,30,30^FB390,1,0,R^FD424133^FS\n^FO488,381^A0N,35,35^FB400,1,0,L^FD78328^FS\n^FX  END_HEADER  ^FS\n^FX  CUSTOM_DATA  ^FS\n^FO0,580^A0N,175,175^FB630,1,0,R^FDSSP22^FS\n^FO670,640^A0N,47,47^FB200,1,0,L^FD02:00^FS\n^FO0,790^A0N,28,28^FB533,1,0,R^FDXSP1 > SSP22 > ^FS\n^FO538,785^A0N,40,40^FD2^FS\n^FO0,830^A0N,38,38^FB820,1,0,C^FDSEX 07/07/2023   CEP: 13570080   NF: 6324^FS\n^FX  END CUSTOM_DATA  ^FS\n^FO0,950^GB850,0,2^FS\n^FX  RECEIVER ZONE  ^FS\n^FO30,970^A0N,26,26^FB600,2,0,L^FH^FDVal_C3_A9ria Boa Sorte Hernandez Martins (BSRADM1)^FS\n^FO30,1030^A0N,26,26^FB600,2,0,L^FH^FDEndere_C3_A7o: Rua Jos_C3_A9 Barnab_C3_A9 400_2c Jardim Ricetti^FS\n^FO30,1090^A0N,30,30^FDCEP: 13570080^FS\n^FO30,1089^A0N,30,30^FDCEP: 13570080^FS\n^FO30,1121^A0N,26,26^FB600,2,1000,L^FH^FDCidade de destino: S_C3_A3o Carlos_2c S_C3_A3o Paulo^FS\n^FO30,1150^A0N,26,26^FB600,5,0,L^FH^FDComplemento: Referencia: Proximo a Padaria Nosso P_C3_A3o^FS\n^FX  QR Code  ^FS\n^FO650,985^BY2,2,0^BQN,2,5^FDLA,{\"id\":\"42413378328\",\"t\":\"lm\"}^FS\n^FO650,1130^GB105,40,40^FS\n^FO650,1135^A0N,35,35^FB105,1,0,C^FR^FDR^FS\n^FX  END_FOOTER  ^FS\n^XZ");
-            return Ok(new { retorno.Mensagem, Etiqueta = retorno.Dados, Codigo = "OK" });
-        }
-        */
     }
 }

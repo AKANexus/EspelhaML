@@ -8,11 +8,12 @@ namespace MlSuite.Domain
 {
 	public class Separação : EntityBase
 	{
-		public UserInfo Usuário { get; set; }
+		public UserInfo? Usuário { get; set; }
         public DateTime Início { get; set; }
 		public DateTime Fim { get; set; }
 		public ulong Identificador { get; set; }
         public List<Embalagem> Embalagens { get; set; }
+        public ulong SellerId { get; set; }
 	}
 
 

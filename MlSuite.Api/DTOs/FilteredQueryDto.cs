@@ -15,14 +15,14 @@ namespace MlSuite.Api.DTOs
         [JsonPropertyName("offset")]
         public int Skip { get; set; }
         [JsonPropertyName("filtros")]
-        public FilterDto[]? Filters { get; set; }
+        public QueryFilterDto[]? Filters { get; set; }
         [JsonPropertyName("ordens")] 
-        public OrderDto[]? OrderDtos { get; set; }
+        public QueryOrderDto[]? OrderDtos { get; set; }
     }
 
-    public class FilterDto
+    public class QueryFilterDto
     {
-        public FilterDto(string property, string filter, string type)
+        public QueryFilterDto(string property, string filter, string type)
         {
             Property = property;
             Filter = filter;
@@ -37,9 +37,9 @@ namespace MlSuite.Api.DTOs
         public string Type { get; set; }
     }
 
-    public class OrderDto
+    public class QueryOrderDto
     {
-        public OrderDto(string property, string order)
+        public QueryOrderDto(string property, string order)
         {
             Property = property;
             Order = order;

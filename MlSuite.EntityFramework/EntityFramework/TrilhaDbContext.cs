@@ -10,9 +10,10 @@ namespace MlSuite.EntityFramework.EntityFramework
         public DbSet<EspelhoLog> Logs { get; set; } = null!;
         public DbSet<Question> Questions { get; set; } = null!;
         public DbSet<Item> Itens { get; set; } = null!;
-        public DbSet<Pedido> Pedidos { get; set; } = null!;
+        public DbSet<Order> Pedidos { get; set; } = null!;
         public DbSet<UserInfo> Usuários { get; set; } = null!;
         public DbSet<Separação> Separações { get; set; } = null!;
+        public DbSet<Pack> Packs { get; set; } = null!;
         public DbSet<PromolimitEntry> PromolimitEntries { get; set; } = null!;
 
         public TrilhaDbContext(DbContextOptions options) : base(options)
@@ -22,14 +23,14 @@ namespace MlSuite.EntityFramework.EntityFramework
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Pedido>()
+            modelBuilder.Entity<Pack>()
                 .HasAlternateKey(x => x.Id);
-            modelBuilder.Entity<PedidoEnvio>()
+            modelBuilder.Entity<Order>()
                 .HasAlternateKey(x => x.Id);
-            modelBuilder.Entity<PedidoPagamento>()
+            modelBuilder.Entity<Shipping>()
                 .HasAlternateKey(x => x.Id);
-            //modelBuilder.Entity<PedidoDestinatário>()
-            //    .HasAlternateKey(x => x.Id);
+            modelBuilder.Entity<Payment>()
+                .HasAlternateKey(x => x.Id);
             modelBuilder.Entity<Item>()
                 .HasAlternateKey(x => x.Id);
             modelBuilder.Entity<ItemVariação>()
@@ -41,10 +42,9 @@ namespace MlSuite.EntityFramework.EntityFramework
             modelBuilder.Entity<Item>()
                 .HasOne(item => item.Seller)
                 .WithMany();
-            modelBuilder.Entity<Pedido>()
-                .HasOne(x => x.Separação)
-                .WithOne(y => y.Pedido)
-                .HasForeignKey<Separação>(y => y.PedidoId);
+
+            modelBuilder.Entity<Embalagem>()
+                .HasIndex(x => new { x.ReferenciaId, x.TipoVendaMl }).IsUnique();
 
             base.OnModelCreating(modelBuilder);
         }

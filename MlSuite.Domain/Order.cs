@@ -4,21 +4,19 @@ using MlSuite.Domain.Enums;
 
 namespace MlSuite.Domain
 {
-    public class Pedido : EntityBase
+    public class Order : EntityBase
     {
         public ulong Id { get; set; }
         public decimal? Frete { get; set; }
         public OrderStatus Status { get; set; }
-        public List<PedidoItem> Itens { get; set; } = new();
-        public PedidoEnvio? Envio { get; set; }
-        public List<PedidoPagamento> Pagamentos { get; set; } = new();
+        public List<OrderItem> Itens { get; set; } = new();
+        public Shipping? Envio { get; set; }
+        public List<Payment> Pagamentos { get; set; } = new();
         public ulong SellerId { get; set; }
-        public Separação? Separação { get; set; }
-        public ulong? PackId { get; set; }
-        //public string Região { get; set; }
+        public Pack? Pack { get; set; }
     }
 
-    public class PedidoItem : EntityBase
+    public class OrderItem : EntityBase
     {
         public string Título { get; set; }
         public decimal PreçoUnitário { get; set; }
@@ -27,10 +25,9 @@ namespace MlSuite.Domain
         public string DescritorVariação { get; set; }
         public ItemVariação? ItemVariação { get; set; }
         public string Sku { get; set; } = "N/A";
-        public SeparaçãoItem? Separação { get; set; }
     }
 
-    public class PedidoPagamento : EntityBase
+    public class Payment : EntityBase
     {
         public ulong Id { get; set; }
         public decimal TotalPago { get; set; }
@@ -39,23 +36,6 @@ namespace MlSuite.Domain
         public int Parcelas { get; set; }
         public decimal ValorFrete { get; set; }
 
-    }
-
-    public class PedidoEnvio : EntityBase
-    {
-        public ulong Id { get; set; }
-        public ShipmentStatus Status { get; set; }
-        public ShipmentSubStatus? SubStatus { get; set; }
-        public string? SubStatusDescrição { get; set; }
-        public DateTime? CriaçãoDoPedido { get; set; }
-        public decimal? ValorDeclarado { get; set; }
-        public decimal? Largura { get; set; }
-        public decimal? Altura { get; set; }
-        public decimal? Comprimento { get; set; }
-        public decimal? Peso { get; set; }
-        public string? CódRastreamento { get; set; }
-        public ShipmentType TipoEnvio { get; set; }
-        public PedidoDestinatário? Destinatário { get; set; }
     }
 
     public class PedidoDestinatário : EntityBase

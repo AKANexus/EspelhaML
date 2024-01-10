@@ -4,6 +4,8 @@ using MlSuite.Domain.Enums;
 using MlSuite.MlDTOs;
 using MlSuite.EntityFramework.EntityFramework;
 using MlSuite.MlApiServiceLib;
+using OrderItem = MlSuite.Domain.OrderItem;
+using Payment = MlSuite.Domain.Payment;
 
 namespace MlSuite.MlSynch.Services
 {
@@ -25,13 +27,13 @@ namespace MlSuite.MlSynch.Services
             var orderResponse = await mlApi.GetOrderById(apiToken, resourceId.ToString());
             if (orderResponse.data?.Id is null || orderResponse.data.Id == 0)
             {
-                context.Logs.Add(new EspelhoLog(nameof(ProcessItemService),
+                context.Logs.Add(new EspelhoLog(nameof(ProcessOrderService),
                     $"Falha ao obter os dados requisitados (27): {orderResponse.data?.Error}"));
                 await context.SaveChangesAsync();
                 return;
             }
 
-            Pedido? tentativo = await context.Pedidos
+            Order? tentativo = await context.Pedidos
                 .Include(x => x.Envio)
                 .ThenInclude(y => y.Destinatário)
                 .Include(x => x.Itens)
@@ -39,6 +41,7 @@ namespace MlSuite.MlSynch.Services
                 //De acordo com https://learn.microsoft.com/en-us/ef/core/miscellaneous/nullable-reference-types#navigating-and-including-nullable-relationships
                 .Include(x => x.Pagamentos).Include(pedido => pedido.Itens)
                 .ThenInclude(pedidoItem => pedidoItem.ItemVariação)
+                .Include(x => x.Pack)
                 .FirstOrDefaultAsync(x => x.Id == orderResponse.data.Id);
 
             if (tentativo == null)
@@ -61,10 +64,10 @@ namespace MlSuite.MlSynch.Services
                         _ => OrderStatus.Desconhecido
                     },
                     SellerId = orderResponse.data.Seller.Id,
-                    PackId = orderResponse.data.PackId
+                    //PackId = orderResponse.data.PackId
                 };
                 if (orderResponse.data.OrderItems.Count > 0)
-                    foreach (OrderItem orderItem in orderResponse.data.OrderItems)
+                    foreach (MlDTOs.OrderItem orderItem in orderResponse.data.OrderItems)
                     {
                         Item? itemTentativo = await context.Itens.Include(y => y.Variações).FirstOrDefaultAsync(y => y.Id == orderItem.Item.Id);
                         if (itemTentativo == null)
@@ -105,7 +108,7 @@ namespace MlSuite.MlSynch.Services
                             }
                         }
 
-                        tentativo.Itens.Add(new PedidoItem
+                        tentativo.Itens.Add(new OrderItem
                         {
                             Item = itemTentativo,
                             ItemVariação = itemTentativo.Variações.FirstOrDefault(x => x.Id == orderItem.Item.VariationId),
@@ -118,7 +121,7 @@ namespace MlSuite.MlSynch.Services
 
                     }
                 if (orderResponse.data.Payments.Count > 0)
-                    foreach (Payment payment in orderResponse.data.Payments)
+                    foreach (MlDTOs.Payment payment in orderResponse.data.Payments)
                     {
                         tentativo.Pagamentos.Add(new()
                         {
@@ -130,30 +133,29 @@ namespace MlSuite.MlSynch.Services
                             ValorTransação = (decimal)(payment.TransactionAmount ?? 0)
                         });
                     }
-
                 if (orderResponse.data?.Shipping?.Id is not null)
                 {
                     var shippingResponse = await mlApi.GetShipmentById(apiToken, orderResponse.data.Shipping.Id.ToString()!);
                     if (shippingResponse.data?.Id is null || shippingResponse.data?.Id == 0)
                     {
-                        context.Logs.Add(new EspelhoLog(nameof(ProcessItemService),
+                        context.Logs.Add(new EspelhoLog(nameof(ProcessOrderService),
                             $"Falha ao obter os dados do shipping requisitados (128): {shippingResponse.data?.Error}"));
                         await context.SaveChangesAsync();
                     }
                     else
                     {
-						Pedido? pedidoComEnvioExistente =
-							await context.Pedidos.Include(x => x.Envio)
-								.ThenInclude(y=>y.Destinatário)
-								.FirstOrDefaultAsync(x => x.Envio != null &&
-								                          x.Envio.Id == orderResponse.data.Shipping.Id);
+                        Order? pedidoComEnvioExistente =
+                            await context.Pedidos.Include(x => x.Envio)
+                                .ThenInclude(y => y.Destinatário)
+                                .FirstOrDefaultAsync(x => x.Envio != null &&
+                                                          x.Envio.Id == orderResponse.data.Shipping.Id);
 
-						if (pedidoComEnvioExistente != null)
-						{
-							tentativo.Envio = pedidoComEnvioExistente.Envio;
-						}
+                        if (pedidoComEnvioExistente != null)
+                        {
+                            tentativo.Envio = pedidoComEnvioExistente.Envio;
+                        }
 
-						tentativo.Envio??= new()
+                        tentativo.Envio ??= new()
                         {
                             Id = shippingResponse.data.Id,
                             Status = shippingResponse.data.Status switch
@@ -214,12 +216,43 @@ namespace MlSuite.MlSynch.Services
 
                     }
                 }
+
+                if (orderResponse.data?.PackId is not null)
+                {
+                    //var packResponse = await mlApi.GetPackInfoById(apiToken, orderResponse.data.PackId.ToString()!);
+                    //if (packResponse.data?.Id is null || packResponse.data?.Id == 0)
+                    //{
+                    //    context.Logs.Add(new EspelhoLog(nameof(ProcessOrderService),
+                    //        $"Falha ao obter os dados do pack requisitados (226): {packResponse.data?.Error}"));
+                    //    await context.SaveChangesAsync();
+                    //}
+                    //else
+                    {
+                        Pack? packExistente =
+                            await context.Packs.FirstOrDefaultAsync(x => x.Id == (ulong)orderResponse.data.PackId);
+
+                        if (packExistente != null)
+                        {
+                            tentativo.Pack = packExistente;
+                        }
+
+                        else
+                        {
+                            tentativo.Pack = new Pack()
+                            {
+                                Id = (ulong)orderResponse.data.PackId,
+                                Shipping = tentativo!.Envio
+                            };
+                        }
+                        
+                    }
+                }
             }
 
             else
             {
                 tentativo.Frete = orderResponse.data.ShippingCost;
-                tentativo.PackId = orderResponse.data.PackId;
+                //tentativo.PackId = orderResponse.data.PackId;
                 tentativo.Status = orderResponse.data.Status switch
                 {
                     "confirmed" => OrderStatus.Confirmado,
@@ -235,7 +268,7 @@ namespace MlSuite.MlSynch.Services
                 };
 
                 if (orderResponse.data.OrderItems.Count > 0)
-                    foreach (OrderItem orderItem in orderResponse.data.OrderItems)
+                    foreach (MlDTOs.OrderItem orderItem in orderResponse.data.OrderItems)
                     {
                         if (tentativo.Itens.All(x => x.Item?.Id != orderItem.Item.Id))
                         {
@@ -275,10 +308,10 @@ namespace MlSuite.MlSynch.Services
                                                 ))));
                                 }
                             }
-                            
+
                             else
                             {
-                                tentativo.Itens.Add(new PedidoItem
+                                tentativo.Itens.Add(new OrderItem
                                 {
                                     Item = itemTentativo,
                                     ItemVariação = itemTentativo.Variações.FirstOrDefault(x => x.Id == orderItem.Item.VariationId),
@@ -292,7 +325,7 @@ namespace MlSuite.MlSynch.Services
                         }
                     }
 
-                foreach (PedidoItem pedidoItem in tentativo.Itens)
+                foreach (OrderItem pedidoItem in tentativo.Itens)
                 {
                     if (orderResponse.data.OrderItems.All(x => x.Item.Id != pedidoItem.Item?.Id))
                     {
@@ -300,7 +333,7 @@ namespace MlSuite.MlSynch.Services
                     }
                     else
                     {
-                        OrderItem orderItem = orderResponse.data.OrderItems.First(x => x.Item.Id == pedidoItem.Item?.Id);
+                        MlDTOs.OrderItem orderItem = orderResponse.data.OrderItems.First(x => x.Item.Id == pedidoItem.Item?.Id);
                         pedidoItem.PreçoUnitário = (decimal)(orderItem.UnitPrice ?? 0);
                         pedidoItem.QuantidadeVendida = orderItem.Quantity ?? 0;
                         pedidoItem.Título = orderItem.Item.Title;
@@ -321,7 +354,7 @@ namespace MlSuite.MlSynch.Services
                     }
                 }
                 if (orderResponse.data.Payments.Count > 0)
-                    foreach (Payment payment in orderResponse.data.Payments)
+                    foreach (MlDTOs.Payment payment in orderResponse.data.Payments)
                     {
                         if (tentativo.Pagamentos.All(y => y.Id != payment.Id))
                         {
@@ -337,7 +370,7 @@ namespace MlSuite.MlSynch.Services
                         }
                     }
 
-                foreach (PedidoPagamento pagamento in tentativo.Pagamentos)
+                foreach (Payment pagamento in tentativo.Pagamentos)
                 {
                     if (orderResponse.data.Payments.All(y => y.Id != pagamento.Id))
                     {
@@ -345,7 +378,7 @@ namespace MlSuite.MlSynch.Services
                     }
                     else
                     {
-                        Payment payment = orderResponse.data.Payments.First(y => y.Id == pagamento.Id);
+                        MlDTOs.Payment payment = orderResponse.data.Payments.First(y => y.Id == pagamento.Id);
                         pagamento.Parcelas = payment.Installments ?? 1;
                         pagamento.Parcelas = payment.Installments ?? 1;
                         pagamento.TotalPago = (decimal)(payment.TotalPaidAmount ?? 0);
@@ -366,16 +399,16 @@ namespace MlSuite.MlSynch.Services
                     }
                     else
                     {
-	                    Pedido? pedidoComEnvioExistente =
-		                    await context.Pedidos.Include(x => x.Envio)
-			                    .ThenInclude(y => y.Destinatário)
-								.FirstOrDefaultAsync(x => x.Envio != null &&
-			                    x.Envio.Id == orderResponse.data.Shipping.Id);
+                        Order? pedidoComEnvioExistente =
+                            await context.Pedidos.Include(x => x.Envio)
+                                .ThenInclude(y => y.Destinatário)
+                                .FirstOrDefaultAsync(x => x.Envio != null &&
+                                x.Envio.Id == orderResponse.data.Shipping.Id);
 
-	                    if (pedidoComEnvioExistente != null)
-	                    {
-		                    tentativo.Envio = pedidoComEnvioExistente.Envio;
-	                    }
+                        if (pedidoComEnvioExistente != null)
+                        {
+                            tentativo.Envio = pedidoComEnvioExistente.Envio;
+                        }
 
                         if (tentativo.Envio is null)
                         {
@@ -478,6 +511,26 @@ namespace MlSuite.MlSynch.Services
                             tentativo.Envio.Destinatário.ÉResidencial = shippingResponse.data.ReceiverAddress?.DeliveryPreference ==
                                                                         "residential";
                         }
+                    }
+                }
+
+                if (orderResponse.data?.PackId != null)
+                {
+                    Pack? packExistente =
+                        await context.Packs.FirstOrDefaultAsync(x => x.Id == (ulong)orderResponse.data.PackId);
+
+                    if (packExistente != null)
+                    {
+                        tentativo.Pack = packExistente;
+                    }
+
+                    else
+                    {
+                        tentativo.Pack = new Pack()
+                        {
+                            Id = (ulong)orderResponse.data.PackId,
+                            Shipping = tentativo!.Envio
+                        };
                     }
                 }
             }

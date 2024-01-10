@@ -249,6 +249,26 @@ namespace MlSuite.MlApiServiceLib
             }
         }
 
+        public async Task<(int status, PackResponseDto? data)> GetPackInfoById(string accessToken, string packId)
+        {
+            RestRequest getPackRequest = new RestRequest($"/packs/{packId}")
+                    .AddHeader("Authorization", $"Bearer {accessToken}")
+                ;
+
+            RestResponse<PackResponseDto> response = await _mlClient.ExecuteGetAsync<PackResponseDto>(getPackRequest);
+
+            if (!response.IsSuccessful)
+            {
+                return ((int)response.StatusCode,
+                    response.Data ?? new PackResponseDto { Error = response.ErrorMessage });
+            }
+
+            else
+            {
+                return ((int)response.StatusCode, response.Data);
+            }
+        }
+
         public async Task<(int status, ItemRootDto? data)> _PostItem(string accessToken, ItemRootDto item)
         {
             throw new NotImplementedException();

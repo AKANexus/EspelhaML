@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MlSuite.EntityFramework.EntityFramework;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MlSynch.Migrations
 {
     [DbContext(typeof(TrilhaDbContext))]
-    partial class TrilhaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240104183050_ColumnRename")]
+    partial class ColumnRename
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,86 +24,6 @@ namespace MlSynch.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("MlSuite.Domain.Embalagem", b =>
-                {
-                    b.Property<Guid>("Uuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Etiqueta")
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("ReferenciaId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<Guid?>("SeparaçãoUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("ShippingId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<int>("StatusEmbalagem")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TipoVendaMl")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.HasKey("Uuid");
-
-                    b.HasIndex("SeparaçãoUuid");
-
-                    b.HasIndex("ReferenciaId", "TipoVendaMl")
-                        .IsUnique();
-
-                    b.ToTable("Embalagem");
-                });
-
-            modelBuilder.Entity("MlSuite.Domain.EmbalagemItem", b =>
-                {
-                    b.Property<Guid>("Uuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Descrição")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("EmbalagemUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("QuantidadeAEscanear")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("QuantidadeEscaneada")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("SKU")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.HasKey("Uuid");
-
-                    b.HasIndex("EmbalagemUuid");
-
-                    b.ToTable("EmbalagemItem");
-                });
 
             modelBuilder.Entity("MlSuite.Domain.EspelhoLog", b =>
                 {
@@ -279,6 +202,9 @@ namespace MlSynch.Migrations
                     b.Property<decimal>("SellerId")
                         .HasColumnType("numeric(20,0)");
 
+                    b.Property<Guid?>("SeparaçãoUuid")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -292,6 +218,8 @@ namespace MlSynch.Migrations
                     b.HasIndex("EnvioUuid");
 
                     b.HasIndex("PackUuid");
+
+                    b.HasIndex("SeparaçãoUuid");
 
                     b.ToTable("Pedidos");
                 });
@@ -324,6 +252,9 @@ namespace MlSynch.Migrations
                     b.Property<int>("QuantidadeVendida")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("SeparaçãoUuid")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Sku")
                         .IsRequired()
                         .HasColumnType("text");
@@ -342,6 +273,8 @@ namespace MlSynch.Migrations
                     b.HasIndex("ItemVariaçãoUuid");
 
                     b.HasIndex("OrderUuid");
+
+                    b.HasIndex("SeparaçãoUuid");
 
                     b.ToTable("OrderItem");
                 });
@@ -615,6 +548,9 @@ namespace MlSynch.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<string>("Etiqueta")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("Fim")
                         .HasColumnType("timestamp without time zone");
 
@@ -635,6 +571,26 @@ namespace MlSynch.Migrations
                     b.HasIndex("UsuárioUuid");
 
                     b.ToTable("Separações");
+                });
+
+            modelBuilder.Entity("MlSuite.Domain.SeparaçãoItem", b =>
+                {
+                    b.Property<Guid>("Uuid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("Separados")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Uuid");
+
+                    b.ToTable("SeparaçãoItem");
                 });
 
             modelBuilder.Entity("MlSuite.Domain.Shipping", b =>
@@ -734,20 +690,6 @@ namespace MlSynch.Migrations
                     b.ToTable("Usuários");
                 });
 
-            modelBuilder.Entity("MlSuite.Domain.Embalagem", b =>
-                {
-                    b.HasOne("MlSuite.Domain.Separação", null)
-                        .WithMany("Embalagens")
-                        .HasForeignKey("SeparaçãoUuid");
-                });
-
-            modelBuilder.Entity("MlSuite.Domain.EmbalagemItem", b =>
-                {
-                    b.HasOne("MlSuite.Domain.Embalagem", null)
-                        .WithMany("EmbalagemItems")
-                        .HasForeignKey("EmbalagemUuid");
-                });
-
             modelBuilder.Entity("MlSuite.Domain.Item", b =>
                 {
                     b.HasOne("MlSuite.Domain.MlUserAuthInfo", "Seller")
@@ -776,9 +718,15 @@ namespace MlSynch.Migrations
                         .WithMany("Pedidos")
                         .HasForeignKey("PackUuid");
 
+                    b.HasOne("MlSuite.Domain.Separação", "Separação")
+                        .WithMany("Orders")
+                        .HasForeignKey("SeparaçãoUuid");
+
                     b.Navigation("Envio");
 
                     b.Navigation("Pack");
+
+                    b.Navigation("Separação");
                 });
 
             modelBuilder.Entity("MlSuite.Domain.OrderItem", b =>
@@ -795,9 +743,15 @@ namespace MlSynch.Migrations
                         .WithMany("Itens")
                         .HasForeignKey("OrderUuid");
 
+                    b.HasOne("MlSuite.Domain.SeparaçãoItem", "Separação")
+                        .WithMany()
+                        .HasForeignKey("SeparaçãoUuid");
+
                     b.Navigation("Item");
 
                     b.Navigation("ItemVariação");
+
+                    b.Navigation("Separação");
                 });
 
             modelBuilder.Entity("MlSuite.Domain.Pack", b =>
@@ -866,11 +820,6 @@ namespace MlSynch.Migrations
                     b.Navigation("Destinatário");
                 });
 
-            modelBuilder.Entity("MlSuite.Domain.Embalagem", b =>
-                {
-                    b.Navigation("EmbalagemItems");
-                });
-
             modelBuilder.Entity("MlSuite.Domain.Item", b =>
                 {
                     b.Navigation("Variações");
@@ -890,7 +839,7 @@ namespace MlSynch.Migrations
 
             modelBuilder.Entity("MlSuite.Domain.Separação", b =>
                 {
-                    b.Navigation("Embalagens");
+                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }

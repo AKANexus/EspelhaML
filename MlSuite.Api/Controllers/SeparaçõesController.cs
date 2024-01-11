@@ -38,7 +38,7 @@ namespace MlSuite.Api.Controllers
                             actualProperty = "pendente";
                             break;
                         case "tipo_envio":
-                            actualProperty = "Envio.TipoEnvio";
+                            actualProperty = "Shipping.TipoEnvio";
                             isForeignProperty = true;
                             break;
                         default:
@@ -140,43 +140,53 @@ namespace MlSuite.Api.Controllers
         }
     }
 
+    public class CriarSeparaçãoRootDto
+    {
+        public List<CriarSeparaçãoItemDto> Pedidos { get; set; }
+    }
 
-    [Route("pedidos"), Autorizar, EnableCors]
-    public class PedidosController : Controller
+    public class CriarSeparaçãoItemDto
+    {
+        public string Tipo { get; set; }
+        public ulong Id { get; set; }
+    }
+
+    [Route("separacoes"), Autorizar, EnableCors]
+    public class SeparaçõesController : Controller
     {
 
         private readonly IServiceScopeFactory _scopeFactory;
 
-        public PedidosController(IServiceScopeFactory scopeFactory)
+        public SeparaçõesController(IServiceScopeFactory scopeFactory)
         {
             _scopeFactory = scopeFactory;
         }
         
-        [HttpGet("criaSeparacao"), Anônimo]
-        public async Task<IActionResult> CriaSeparação([FromQuery] string pedidos)
+        [HttpGet("testeCriar"), Anônimo]
+        public async Task<IActionResult> CriaSeparaçãoDeTeste([FromQuery] string pedidos)
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
             var context = provider.GetRequiredService<TrilhaDbContext>();
 
             ulong[] pedidoIds = pedidos.Split(',').Select(ulong.Parse).ToArray();
-            Order[] tentativos = await context.Pedidos
-                .Include(x=>x.Envio)
+            Order[] tentativos = await context.Orders
+                .Include(x=>x.Shipping)
                 .Include(x=>x.Itens)
                 .ThenInclude(y=>y.Item)
-                .Where(pedido => pedido.Envio != null &&
-                                 pedido.Envio.Status == ShipmentStatus.ProntoParaEnvio &&
-                                 pedido.Envio.SubStatusDescrição != "invoice_pending" &&
-                                 pedido.Envio.SubStatusDescrição != "picked_up" &&
-                                 pedido.Envio.TipoEnvio != ShipmentType.Fulfillment &&
-                                 (pedido.Envio.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
-                                  pedido.Envio.SubStatus == ShipmentSubStatus.Impresso))
+                .Where(pedido => pedido.Shipping != null &&
+                                 pedido.Shipping.Status == ShipmentStatus.ProntoParaEnvio &&
+                                 pedido.Shipping.SubStatusDescrição != "invoice_pending" &&
+                                 pedido.Shipping.SubStatusDescrição != "picked_up" &&
+                                 pedido.Shipping.TipoEnvio != ShipmentType.Fulfillment &&
+                                 (pedido.Shipping.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
+                                  pedido.Shipping.SubStatus == ShipmentSubStatus.Impresso))
                 .Where(x => pedidoIds.Contains(x.Pack.Id) || pedidoIds.Contains(x.Id))
                 .ToArrayAsync();
             List<ulong> pedidosInválidos = new();
             Separação novaSeparação = new()
             {
                 Usuário = await context.Usuários.FirstAsync(x=>x.Username == "Teste"),
-                Identificador = (ulong)DateTime.UtcNow.Ticks
+                Identificador = (long)DateTime.UtcNow.Ticks
                 
             };
             foreach (Order tentativo in tentativos)
@@ -189,13 +199,24 @@ namespace MlSuite.Api.Controllers
                 if (separaçãoTentativo != null)
                 {
                     pedidosInválidos.Add(tentativo.Id);
+                    //continue;
                 }
                 else
                 {
+                    if (novaSeparação.SellerId == default)
+                        novaSeparação.SellerId = tentativo.SellerId;
+                    else
+                    {
+                        if (tentativo.SellerId != novaSeparação.SellerId)
+                        {
+                            pedidosInválidos.Add(tentativo.Id);
+                            continue;
+                        }
+                    }
                     novaSeparação.Embalagens.Add(new Embalagem()
                     {
                         TipoVendaMl = TipoVendaMl.Order,
-                        ShippingId = tentativo.Envio!.Id,
+                        ShippingId = tentativo.Shipping!.Id,
                         ReferenciaId = tentativo.Id,
                         EmbalagemItems = tentativo.Itens.Select(y=>new EmbalagemItem()
                         {
@@ -219,7 +240,143 @@ namespace MlSuite.Api.Controllers
                 new { num_separacao = novaSeparação.Identificador, pedidos_inválidos = pedidosInválidos }));
         }
 
-        [HttpPost("getSeparacoes"), Anônimo]
+        [HttpPost("criar"), Anônimo]
+        public async Task<IActionResult> CriaSeparação([FromBody] CriarSeparaçãoRootDto dto)
+        {
+            var provider = _scopeFactory.CreateScope().ServiceProvider;
+            var context = provider.GetRequiredService<TrilhaDbContext>();
+
+            object? userUuid = HttpContext.Items["user_info"];
+            if (userUuid is not UserInfo userInfo)
+            {
+                var retorno1 = new RetornoDto("Uuid não foi determinada.");
+                return Ok(new { retorno1.Mensagem, Codigo = "UUID_NAO_DETERMINADO" });
+            }
+
+            UserInfo? requestingUser = await context.Usuários.FirstOrDefaultAsync(x =>
+                x.Uuid == userInfo.Uuid);
+
+            if (requestingUser == null)
+            {
+                var retorno1 = new RetornoDto("Uuid não foi encontrada.");
+                return Ok(new { retorno1.Mensagem, Codigo = "UUID_NAO_ENCONTRADO" });
+
+            }
+
+            List<Order> orders = new List<Order>();
+            List<Pack> packs = new List<Pack>();
+            Separação novaSeparação = new()
+            {
+                Embalagens = new List<Embalagem>()
+            };
+            ulong? selectedSellerId = null;
+            
+
+            foreach (CriarSeparaçãoItemDto itemDto in dto.Pedidos)
+            {
+                if (itemDto.Tipo.Equals("P", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var packTentativo = await context.Packs
+
+                        .Include(pack => pack.Pedidos)
+                        .ThenInclude(order => order.Itens)
+                        .ThenInclude(orderItem => orderItem.Item)
+
+                        .Include(pack => pack.Shipping)
+
+                        .FirstOrDefaultAsync(x => x.Id == itemDto.Id);
+
+                    if (packTentativo == null)
+                    {
+                        var r1 = new RetornoDto("Um ou mais pedidos não foram encontrados no sistema", itemDto,
+                            "PEDIDO_NAO_ENCONTRADO");
+                        return BadRequest(r1);
+                    }
+                    else
+                    {
+                        selectedSellerId??=packTentativo.Pedidos?.First().SellerId;
+                        if (selectedSellerId != packTentativo.Pedidos?.First().SellerId)
+                        {
+                            var r2 = new RetornoDto("Uma separação pode ter pedidos de apenas uma loja", null,
+                                "MULTIPLAS_STOREFRONTS");
+                            return BadRequest(r2);
+                        }
+
+                        var novaEmbalagem = new Embalagem()
+                        {
+                            ReferenciaId = packTentativo.Id,
+                            TipoVendaMl = TipoVendaMl.Pack,
+                            StatusEmbalagem = StatusEmbalagem.Aberto,
+                            ShippingId = packTentativo.Shipping.Id,
+                            EmbalagemItems = packTentativo.Pedidos.SelectMany(x=>x.Itens.Select(y=>new EmbalagemItem()
+                            {
+                                QuantidadeEscaneada = 0,
+                                QuantidadeAEscanear = y.QuantidadeVendida,
+                                Descrição = y.Título,
+                                SKU = y.Sku,
+                                ImageUrl = y.Item.PrimeiraFoto
+                            })).ToList()
+                        };
+                        novaSeparação.Embalagens.Add(novaEmbalagem);
+                    }
+                }
+                else if (itemDto.Tipo.Equals("O", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var orderTentativa = await context.Orders
+
+                        .Include(order => order.Itens)
+                        .ThenInclude(orderItem => orderItem.Item)
+
+                        .Include(pack => pack.Shipping)
+
+                        .FirstOrDefaultAsync(x => x.Id == itemDto.Id);
+
+                    if (orderTentativa == null)
+                    {
+                        var r1 = new RetornoDto("Um ou mais pedidos não foram encontrados no sistema", itemDto,
+                            "PEDIDO_NAO_ENCONTRADO");
+                        return BadRequest(r1);
+                    }
+                    else
+                    {
+                        selectedSellerId??=orderTentativa.SellerId;
+                        if (selectedSellerId != orderTentativa.SellerId)
+                        {
+                            var r2 = new RetornoDto("Uma separação pode ter pedidos de apenas uma loja", null,
+                                "MULTIPLAS_STOREFRONTS");
+                            return BadRequest(r2);
+                        }
+
+                        var novaEmbalagem = new Embalagem()
+                        {
+                            ReferenciaId = orderTentativa.Id,
+                            TipoVendaMl = TipoVendaMl.Pack,
+                            StatusEmbalagem = StatusEmbalagem.Aberto,
+                            ShippingId = orderTentativa.Shipping.Id,
+                            EmbalagemItems = orderTentativa.Itens.Select(y=>new EmbalagemItem()
+                            {
+                                QuantidadeEscaneada = 0,
+                                QuantidadeAEscanear = y.QuantidadeVendida,
+                                Descrição = y.Título,
+                                SKU = y.Sku,
+                                ImageUrl = y.Item.PrimeiraFoto
+                            }).ToList()
+                        };
+                        novaSeparação.Embalagens.Add(novaEmbalagem);
+                    }
+                }
+                novaSeparação.SellerId = (ulong)selectedSellerId;
+
+                context.Update(novaSeparação);
+                await context.SaveChangesAsync();
+
+            }
+
+            var r0 = new RetornoDto("Separação gerada com sucesso", novaSeparação);
+            return Ok(r0);
+        }
+
+        [HttpGet(""), Anônimo]
         public async Task<IActionResult> GetSeparações()
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
@@ -239,7 +396,7 @@ namespace MlSuite.Api.Controllers
             return Ok(r2);
         }
 
-        [HttpGet("separacaoAberta"), Autorizar]
+        [HttpGet("aberta"), Autorizar]
         public async Task<IActionResult> GetSeparaçãoEmAberto()
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
@@ -278,8 +435,8 @@ namespace MlSuite.Api.Controllers
             return Ok(r2);
         }
 
-        [HttpPost("processaSku"), Autorizar]
-        public async Task<IActionResult> ProcessaSku([FromQuery] string sku, [FromQuery] ulong idSeparacao)
+        [HttpPost("processar"), Autorizar]
+        public async Task<IActionResult> ProcessaSku([FromQuery] string sku, [FromQuery] long idSeparacao)
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
             var context = provider.GetRequiredService<TrilhaDbContext>();
@@ -445,8 +602,8 @@ namespace MlSuite.Api.Controllers
             
         }
 
-        [HttpGet("verificaSeparacao"), Autorizar]
-        public async Task<IActionResult> VerificaSeparação([FromQuery] ulong idSeparacao)
+        [HttpGet("verificar"), Autorizar]
+        public async Task<IActionResult> VerificaSeparação([FromQuery] long idSeparacao)
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
             var context = provider.GetRequiredService<TrilhaDbContext>();

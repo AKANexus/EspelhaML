@@ -11,7 +11,7 @@ namespace MlSuite.Domain
 		public UserInfo? Usuário { get; set; }
         public DateTime Início { get; set; }
 		public DateTime Fim { get; set; }
-		public ulong Identificador { get; set; }
+		public long Identificador { get; set; }
         public List<Embalagem> Embalagens { get; set; }
         public ulong SellerId { get; set; }
 	}

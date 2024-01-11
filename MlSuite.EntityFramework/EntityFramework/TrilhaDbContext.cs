@@ -10,7 +10,7 @@ namespace MlSuite.EntityFramework.EntityFramework
         public DbSet<EspelhoLog> Logs { get; set; } = null!;
         public DbSet<Question> Questions { get; set; } = null!;
         public DbSet<Item> Itens { get; set; } = null!;
-        public DbSet<Order> Pedidos { get; set; } = null!;
+        public DbSet<Order> Orders { get; set; } = null!;
         public DbSet<UserInfo> Usuários { get; set; } = null!;
         public DbSet<Separação> Separações { get; set; } = null!;
         public DbSet<Pack> Packs { get; set; } = null!;
@@ -42,6 +42,11 @@ namespace MlSuite.EntityFramework.EntityFramework
             modelBuilder.Entity<Item>()
                 .HasOne(item => item.Seller)
                 .WithMany();
+
+            modelBuilder.Entity<Separação>()
+                .Property(x => x.Identificador)
+                .UseIdentityAlwaysColumn()
+                .ValueGeneratedOnAdd();
 
             modelBuilder.Entity<Embalagem>()
                 .HasIndex(x => new { x.ReferenciaId, x.TipoVendaMl }).IsUnique();

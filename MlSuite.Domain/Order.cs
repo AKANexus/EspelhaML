@@ -10,7 +10,7 @@ namespace MlSuite.Domain
         public decimal? Frete { get; set; }
         public OrderStatus Status { get; set; }
         public List<OrderItem> Itens { get; set; } = new();
-        public Shipping? Envio { get; set; }
+        public Shipping? Shipping { get; set; }
         public List<Payment> Pagamentos { get; set; } = new();
         public ulong SellerId { get; set; }
         public Pack? Pack { get; set; }

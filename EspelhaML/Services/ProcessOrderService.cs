@@ -33,8 +33,8 @@ namespace MlSuite.MlSynch.Services
                 return;
             }
 
-            Order? tentativo = await context.Pedidos
-                .Include(x => x.Envio)
+            Order? tentativo = await context.Orders
+                .Include(x => x.Shipping)
                 .ThenInclude(y => y.Destinatário)
                 .Include(x => x.Itens)
                 .ThenInclude(pedidoItem => pedidoItem.Item).ThenInclude(item => item!.Variações)
@@ -145,17 +145,17 @@ namespace MlSuite.MlSynch.Services
                     else
                     {
                         Order? pedidoComEnvioExistente =
-                            await context.Pedidos.Include(x => x.Envio)
+                            await context.Orders.Include(x => x.Shipping)
                                 .ThenInclude(y => y.Destinatário)
-                                .FirstOrDefaultAsync(x => x.Envio != null &&
-                                                          x.Envio.Id == orderResponse.data.Shipping.Id);
+                                .FirstOrDefaultAsync(x => x.Shipping != null &&
+                                                          x.Shipping.Id == orderResponse.data.Shipping.Id);
 
                         if (pedidoComEnvioExistente != null)
                         {
-                            tentativo.Envio = pedidoComEnvioExistente.Envio;
+                            tentativo.Shipping = pedidoComEnvioExistente.Shipping;
                         }
 
-                        tentativo.Envio ??= new()
+                        tentativo.Shipping ??= new()
                         {
                             Id = shippingResponse.data.Id,
                             Status = shippingResponse.data.Status switch
@@ -241,7 +241,7 @@ namespace MlSuite.MlSynch.Services
                             tentativo.Pack = new Pack()
                             {
                                 Id = (ulong)orderResponse.data.PackId,
-                                Shipping = tentativo!.Envio
+                                Shipping = tentativo!.Shipping
                             };
                         }
                         
@@ -400,19 +400,19 @@ namespace MlSuite.MlSynch.Services
                     else
                     {
                         Order? pedidoComEnvioExistente =
-                            await context.Pedidos.Include(x => x.Envio)
+                            await context.Orders.Include(x => x.Shipping)
                                 .ThenInclude(y => y.Destinatário)
-                                .FirstOrDefaultAsync(x => x.Envio != null &&
-                                x.Envio.Id == orderResponse.data.Shipping.Id);
+                                .FirstOrDefaultAsync(x => x.Shipping != null &&
+                                x.Shipping.Id == orderResponse.data.Shipping.Id);
 
                         if (pedidoComEnvioExistente != null)
                         {
-                            tentativo.Envio = pedidoComEnvioExistente.Envio;
+                            tentativo.Shipping = pedidoComEnvioExistente.Shipping;
                         }
 
-                        if (tentativo.Envio is null)
+                        if (tentativo.Shipping is null)
                         {
-                            tentativo.Envio = new()
+                            tentativo.Shipping = new()
                             {
                                 Id = shippingResponse.data.Id,
                                 Status = shippingResponse.data.Status switch
@@ -466,7 +466,7 @@ namespace MlSuite.MlSynch.Services
                         }
                         else
                         {
-                            tentativo.Envio.Status = shippingResponse.data.Status switch
+                            tentativo.Shipping.Status = shippingResponse.data.Status switch
                             {
                                 "pending" => ShipmentStatus.Pendente,
                                 "handling" => ShipmentStatus.FretePago,
@@ -477,7 +477,7 @@ namespace MlSuite.MlSynch.Services
                                 "cancelled" => ShipmentStatus.Cancelado,
                                 _ => ShipmentStatus.Desconhecido
                             };
-                            tentativo.Envio.SubStatus = shippingResponse.data.Substatus switch
+                            tentativo.Shipping.SubStatus = shippingResponse.data.Substatus switch
                             {
                                 "ready_to_print" => ShipmentSubStatus.ProntoParaImpressão,
                                 "ready_for_pickup" => ShipmentSubStatus.ProntoParaColeta,
@@ -492,23 +492,23 @@ namespace MlSuite.MlSynch.Services
                                 _ => ShipmentSubStatus.Desconhecido,
                             };
 
-                            tentativo.Envio.SubStatusDescrição = shippingResponse.data.Substatus;
-                            //tentativo.Envio.ValorDeclarado = shippingResponse.data.DeclaredValue;
-                            //tentativo.Envio.Largura = shippingResponse.data.Dimensions?.Width;
-                            //tentativo.Envio.Altura = shippingResponse.data.Dimensions?.Height;
-                            //tentativo.Envio.Comprimento = shippingResponse.data.Dimensions?.Length;
-                            //tentativo.Envio.Peso = shippingResponse.data.Dimensions?.Weight;
-                            tentativo.Envio.CódRastreamento = shippingResponse.data.TrackingNumber;
-                            tentativo.Envio.Destinatário.Nome = shippingResponse.data.ReceiverAddress.ReceiverName ?? shippingResponse.data.ReceiverAddress?.Agency?.Description ?? "N/A";
-                            tentativo.Envio.Destinatário.Telefone = shippingResponse.data.ReceiverAddress?.ReceiverPhone ?? shippingResponse.data.ReceiverAddress?.Agency?.Phone ?? "XXXX";
-                            tentativo.Envio.Destinatário.Logradouro = shippingResponse.data.ReceiverAddress?.StreetName ?? "Desconhecido";
-                            tentativo.Envio.Destinatário.Número = shippingResponse.data.ReceiverAddress?.StreetNumber ?? "Desconhecido";
-                            tentativo.Envio.Destinatário.CEP = shippingResponse.data.ReceiverAddress?.ZipCode ?? "Desconhecido";
-                            tentativo.Envio.Destinatário.Cidade = shippingResponse.data.ReceiverAddress?.City.Name ?? "Desconhecido";
-                            tentativo.Envio.Destinatário.UF = shippingResponse.data.ReceiverAddress?.State.Name ?? "Desconhecido";
-                            tentativo.Envio.Destinatário.Bairro = shippingResponse.data.ReceiverAddress?.Neighborhood?.Name ?? "Desconhecido";
-                            tentativo.Envio.Destinatário.Distrito = shippingResponse.data.ReceiverAddress?.Municipality?.Name ?? "Desconhecido";
-                            tentativo.Envio.Destinatário.ÉResidencial = shippingResponse.data.ReceiverAddress?.DeliveryPreference ==
+                            tentativo.Shipping.SubStatusDescrição = shippingResponse.data.Substatus;
+                            //tentativo.Shipping.ValorDeclarado = shippingResponse.data.DeclaredValue;
+                            //tentativo.Shipping.Largura = shippingResponse.data.Dimensions?.Width;
+                            //tentativo.Shipping.Altura = shippingResponse.data.Dimensions?.Height;
+                            //tentativo.Shipping.Comprimento = shippingResponse.data.Dimensions?.Length;
+                            //tentativo.Shipping.Peso = shippingResponse.data.Dimensions?.Weight;
+                            tentativo.Shipping.CódRastreamento = shippingResponse.data.TrackingNumber;
+                            tentativo.Shipping.Destinatário.Nome = shippingResponse.data.ReceiverAddress.ReceiverName ?? shippingResponse.data.ReceiverAddress?.Agency?.Description ?? "N/A";
+                            tentativo.Shipping.Destinatário.Telefone = shippingResponse.data.ReceiverAddress?.ReceiverPhone ?? shippingResponse.data.ReceiverAddress?.Agency?.Phone ?? "XXXX";
+                            tentativo.Shipping.Destinatário.Logradouro = shippingResponse.data.ReceiverAddress?.StreetName ?? "Desconhecido";
+                            tentativo.Shipping.Destinatário.Número = shippingResponse.data.ReceiverAddress?.StreetNumber ?? "Desconhecido";
+                            tentativo.Shipping.Destinatário.CEP = shippingResponse.data.ReceiverAddress?.ZipCode ?? "Desconhecido";
+                            tentativo.Shipping.Destinatário.Cidade = shippingResponse.data.ReceiverAddress?.City.Name ?? "Desconhecido";
+                            tentativo.Shipping.Destinatário.UF = shippingResponse.data.ReceiverAddress?.State.Name ?? "Desconhecido";
+                            tentativo.Shipping.Destinatário.Bairro = shippingResponse.data.ReceiverAddress?.Neighborhood?.Name ?? "Desconhecido";
+                            tentativo.Shipping.Destinatário.Distrito = shippingResponse.data.ReceiverAddress?.Municipality?.Name ?? "Desconhecido";
+                            tentativo.Shipping.Destinatário.ÉResidencial = shippingResponse.data.ReceiverAddress?.DeliveryPreference ==
                                                                         "residential";
                         }
                     }
@@ -529,13 +529,13 @@ namespace MlSuite.MlSynch.Services
                         tentativo.Pack = new Pack()
                         {
                             Id = (ulong)orderResponse.data.PackId,
-                            Shipping = tentativo!.Envio
+                            Shipping = tentativo!.Shipping
                         };
                     }
                 }
             }
 
-            context.Pedidos.Update(tentativo);
+            context.Orders.Update(tentativo);
             await context.SaveChangesAsync();
         }
     }

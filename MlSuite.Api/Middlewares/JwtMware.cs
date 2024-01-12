@@ -1,7 +1,5 @@
-﻿using Microsoft.IdentityModel.Tokens;
-using MlSuite.Api.Services;
+﻿using MlSuite.Api.Services;
 using MlSuite.Domain;
-using MlSuite.EntityFramework.EntityFramework;
 
 namespace MlSuite.Api.Middlewares
 {

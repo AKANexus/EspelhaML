@@ -1,10 +1,6 @@
-﻿using System.Linq;
-using System.Linq.Dynamic.Core;
-using System.Linq.Expressions;
-using Microsoft.AspNetCore.Cors;
+﻿using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Primitives;
 using MlSuite.Api.Attributes;
 using MlSuite.Api.DTOs;
 using MlSuite.Domain;
@@ -140,16 +136,7 @@ namespace MlSuite.Api.Controllers
         }
     }
 
-    public class CriarSeparaçãoRootDto
-    {
-        public List<CriarSeparaçãoItemDto> Pedidos { get; set; }
-    }
 
-    public class CriarSeparaçãoItemDto
-    {
-        public string Tipo { get; set; }
-        public ulong Id { get; set; }
-    }
 
     [Route("separacoes"), Autorizar, EnableCors]
     public class SeparaçõesController : Controller
@@ -161,7 +148,7 @@ namespace MlSuite.Api.Controllers
         {
             _scopeFactory = scopeFactory;
         }
-        
+
         [HttpGet("testeCriar"), Anônimo]
         public async Task<IActionResult> CriaSeparaçãoDeTeste([FromQuery] string pedidos)
         {
@@ -170,9 +157,9 @@ namespace MlSuite.Api.Controllers
 
             ulong[] pedidoIds = pedidos.Split(',').Select(ulong.Parse).ToArray();
             Order[] tentativos = await context.Orders
-                .Include(x=>x.Shipping)
-                .Include(x=>x.Itens)
-                .ThenInclude(y=>y.Item)
+                .Include(x => x.Shipping)
+                .Include(x => x.Itens)
+                .ThenInclude(y => y.Item)
                 .Where(pedido => pedido.Shipping != null &&
                                  pedido.Shipping.Status == ShipmentStatus.ProntoParaEnvio &&
                                  pedido.Shipping.SubStatusDescrição != "invoice_pending" &&
@@ -185,14 +172,14 @@ namespace MlSuite.Api.Controllers
             List<ulong> pedidosInválidos = new();
             Separação novaSeparação = new()
             {
-                Usuário = await context.Usuários.FirstAsync(x=>x.Username == "Teste"),
+                Usuário = await context.Usuários.FirstAsync(x => x.Username == "Teste"),
                 Identificador = (long)DateTime.UtcNow.Ticks
-                
+
             };
             foreach (Order tentativo in tentativos)
             {
                 var separaçãoTentativo = await context.Separações
-                    .Include(x=>x.Embalagens)
+                    .Include(x => x.Embalagens)
                     .FirstOrDefaultAsync(x => x.Embalagens.Any(y =>
                         y.ReferenciaId == tentativo.Id && y.TipoVendaMl == TipoVendaMl.Order));
 
@@ -218,7 +205,7 @@ namespace MlSuite.Api.Controllers
                         TipoVendaMl = TipoVendaMl.Order,
                         ShippingId = tentativo.Shipping!.Id,
                         ReferenciaId = tentativo.Id,
-                        EmbalagemItems = tentativo.Itens.Select(y=>new EmbalagemItem()
+                        EmbalagemItems = tentativo.Itens.Select(y => new EmbalagemItem()
                         {
                             SKU = y.Sku,
                             ImageUrl = y.Item!.PrimeiraFoto,
@@ -240,7 +227,7 @@ namespace MlSuite.Api.Controllers
                 new { num_separacao = novaSeparação.Identificador, pedidos_inválidos = pedidosInválidos }));
         }
 
-        [HttpPost("criar"), Anônimo]
+        [HttpPost("criar"), Autorizar]
         public async Task<IActionResult> CriaSeparação([FromBody] CriarSeparaçãoRootDto dto)
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
@@ -263,14 +250,14 @@ namespace MlSuite.Api.Controllers
 
             }
 
-            List<Order> orders = new List<Order>();
-            List<Pack> packs = new List<Pack>();
+            //List<Order> orders = new List<Order>();
+            //List<Pack> packs = new List<Pack>();
             Separação novaSeparação = new()
             {
                 Embalagens = new List<Embalagem>()
             };
             ulong? selectedSellerId = null;
-            
+
 
             foreach (CriarSeparaçãoItemDto itemDto in dto.Pedidos)
             {
@@ -294,7 +281,7 @@ namespace MlSuite.Api.Controllers
                     }
                     else
                     {
-                        selectedSellerId??=packTentativo.Pedidos?.First().SellerId;
+                        selectedSellerId ??= packTentativo.Pedidos?.First().SellerId;
                         if (selectedSellerId != packTentativo.Pedidos?.First().SellerId)
                         {
                             var r2 = new RetornoDto("Uma separação pode ter pedidos de apenas uma loja", null,
@@ -308,7 +295,7 @@ namespace MlSuite.Api.Controllers
                             TipoVendaMl = TipoVendaMl.Pack,
                             StatusEmbalagem = StatusEmbalagem.Aberto,
                             ShippingId = packTentativo.Shipping.Id,
-                            EmbalagemItems = packTentativo.Pedidos.SelectMany(x=>x.Itens.Select(y=>new EmbalagemItem()
+                            EmbalagemItems = packTentativo.Pedidos.SelectMany(x => x.Itens.Select(y => new EmbalagemItem()
                             {
                                 QuantidadeEscaneada = 0,
                                 QuantidadeAEscanear = y.QuantidadeVendida,
@@ -339,7 +326,7 @@ namespace MlSuite.Api.Controllers
                     }
                     else
                     {
-                        selectedSellerId??=orderTentativa.SellerId;
+                        selectedSellerId ??= orderTentativa.SellerId;
                         if (selectedSellerId != orderTentativa.SellerId)
                         {
                             var r2 = new RetornoDto("Uma separação pode ter pedidos de apenas uma loja", null,
@@ -350,10 +337,10 @@ namespace MlSuite.Api.Controllers
                         var novaEmbalagem = new Embalagem()
                         {
                             ReferenciaId = orderTentativa.Id,
-                            TipoVendaMl = TipoVendaMl.Pack,
+                            TipoVendaMl = TipoVendaMl.Order,
                             StatusEmbalagem = StatusEmbalagem.Aberto,
                             ShippingId = orderTentativa.Shipping.Id,
-                            EmbalagemItems = orderTentativa.Itens.Select(y=>new EmbalagemItem()
+                            EmbalagemItems = orderTentativa.Itens.Select(y => new EmbalagemItem()
                             {
                                 QuantidadeEscaneada = 0,
                                 QuantidadeAEscanear = y.QuantidadeVendida,
@@ -420,11 +407,11 @@ namespace MlSuite.Api.Controllers
             }
 
             var separaçãoAberta = await context.Separações
-                .Include(x=>x.Embalagens)
-                .ThenInclude(y=>y.EmbalagemItems)
+                .Include(x => x.Embalagens)
+                .ThenInclude(y => y.EmbalagemItems)
                 .FirstOrDefaultAsync(separação =>
                     separação.Usuário == requestingUser &&
-                    separação.Embalagens.Any(x=>x.StatusEmbalagem != StatusEmbalagem.Impresso));
+                    separação.Embalagens.Any(x => x.StatusEmbalagem != StatusEmbalagem.Impresso));
             if (separaçãoAberta != null)
             {
                 var r1 = new RetornoDto("Há uma separação em aberto", separaçãoAberta);
@@ -461,7 +448,7 @@ namespace MlSuite.Api.Controllers
             var workingSeparação = await context.Separações
                 .Include(x => x.Embalagens)
                 .ThenInclude(y => y.EmbalagemItems)
-                .Include(x=>x.Usuário)
+                .Include(x => x.Usuário)
                 .FirstOrDefaultAsync(separação => separação.Identificador == idSeparacao);
 
 
@@ -533,7 +520,7 @@ namespace MlSuite.Api.Controllers
                 workingEmbalagem.EmbalagemItems.First(x => x.SKU == sku).QuantidadeEscaneada++;
                 workingEmbalagem.StatusEmbalagem = StatusEmbalagem.Aberto;
             }
-            
+
             //Verificar se a embalagem finalizou
             if (workingEmbalagem.EmbalagemItems.All(x => x.QuantidadeEscaneada == x.QuantidadeAEscanear))
             {
@@ -583,9 +570,31 @@ namespace MlSuite.Api.Controllers
                 //Grava etiqueta na Embalagem
                 workingEmbalagem.Etiqueta = etiquetaContent;
 
+                //Grava etiqueta no shipping
+                switch (workingEmbalagem.TipoVendaMl)
+                {
+                    case TipoVendaMl.Pack:
+                        var packTentativo = await context.Packs.Include(x => x.Shipping)
+                            .FirstAsync(x => x.Id == workingEmbalagem.ReferenciaId);
+                        packTentativo.Shipping.Etiqueta = etiquetaContent;
+                        context.Update(packTentativo);
+                        break;
+                    case TipoVendaMl.Order:
+                        var orderTentativa = await context.Orders.Include(x => x.Shipping)
+                            .FirstAsync(x => x.Id == workingEmbalagem.ReferenciaId);
+                        orderTentativa.Shipping.Etiqueta = etiquetaContent;
+                        context.Update(orderTentativa);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
                 //Altera status embalagem para "Impresso"
                 workingEmbalagem.StatusEmbalagem = StatusEmbalagem.Impresso;
-                
+
+                context.Update(workingEmbalagem);
+                await context.SaveChangesAsync();
+
                 //Retorna embalagem com etiqueta
                 var r8 = new RetornoDto("Embalagem finalizada com sucesso!", workingEmbalagem);
                 return Ok(r8);
@@ -599,7 +608,7 @@ namespace MlSuite.Api.Controllers
                 var r9 = new RetornoDto("Embalagem em processo de separação", workingEmbalagem);
                 return Ok(r9);
             }
-            
+
         }
 
         [HttpGet("verificar"), Autorizar]
@@ -628,7 +637,7 @@ namespace MlSuite.Api.Controllers
             var workingSeparação = await context.Separações
                 .Include(x => x.Embalagens)
                 .ThenInclude(y => y.EmbalagemItems)
-                .Include(x=>x.Usuário)
+                .Include(x => x.Usuário)
                 .FirstOrDefaultAsync(separação => separação.Identificador == idSeparacao);
 
 

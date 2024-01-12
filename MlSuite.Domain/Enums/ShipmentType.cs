@@ -4,7 +4,7 @@
     {
         Desconhecido = -1,
         Fulfillment = 1,
-        Flex, //Flex?
+        Flex, //Flex
         Coleta //Coleta
     }
 }

@@ -3,9 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MlSuite.Api;
 using MlSuite.Api.Middlewares;
 using MlSuite.Api.Services;
-using MlSuite.Domain;
 using MlSuite.EntityFramework.EntityFramework;
-using MlSuite.MlApiServiceLib;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);

@@ -1,9 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
-using MlSuite.Domain.Enums;
 using MlSuite.Domain;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MlSuite.EntityFramework.EntityFramework;

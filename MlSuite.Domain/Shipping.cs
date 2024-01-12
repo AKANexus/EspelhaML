@@ -17,4 +17,5 @@ public class Shipping : EntityBase
     public string? CódRastreamento { get; set; }
     public ShipmentType TipoEnvio { get; set; }
     public PedidoDestinatário? Destinatário { get; set; }
+    public string? Etiqueta { get; set; }
 }

@@ -165,7 +165,7 @@ namespace MlSuite.Api.Controllers
 
             try
             {
-                //await emailService.SendAsync(dto.Email!, "Cadastro em Trilhadesk", message, "naoresponda@trilhadesk.com");
+                await emailService.SendAsync(dto.Email!, "Cadastro em Trilhadesk", message, "naoresponda@trilhadesk.com");
                 dbContext.Update(userTentativo);
                 await dbContext.SaveChangesAsync();
             }

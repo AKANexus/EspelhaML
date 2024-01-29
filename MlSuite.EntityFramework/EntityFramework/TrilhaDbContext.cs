@@ -15,6 +15,7 @@ namespace MlSuite.EntityFramework.EntityFramework
         public DbSet<Separação> Separações { get; set; } = null!;
         public DbSet<Pack> Packs { get; set; } = null!;
         public DbSet<PromolimitEntry> PromolimitEntries { get; set; } = null!;
+        public DbSet<WebHookInfo> WebhookSubscribers { get; set; } = null!;
 
         public TrilhaDbContext(DbContextOptions options) : base(options)
         {

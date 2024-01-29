@@ -1,8 +1,11 @@
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using MlSuite.Api;
 using MlSuite.Api.Middlewares;
 using MlSuite.Api.Services;
+using MlSuite.Domain.Enums;
+using MlSuite.Domain.Enums.JsonConverters;
 using MlSuite.EntityFramework.EntityFramework;
 using Npgsql;
 
@@ -10,7 +13,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new EnumStringConverter<PedidoStatus>());
+        options.JsonSerializerOptions.Converters.Add(new EnumStringConverter<ShipmentType>());
+        options.JsonSerializerOptions.Converters.Add(new EnumStringConverter<WebHookTopic>());
+    });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

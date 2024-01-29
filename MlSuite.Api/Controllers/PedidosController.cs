@@ -1,4 +1,6 @@
 ﻿using System.Globalization;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +8,7 @@ using MlSuite.Api.Attributes;
 using MlSuite.Api.DTOs;
 using MlSuite.Domain;
 using MlSuite.Domain.Enums;
+using MlSuite.Domain.Enums.JsonConverters;
 using MlSuite.EntityFramework.EntityFramework;
 
 namespace MlSuite.Api.Controllers
@@ -17,14 +20,19 @@ namespace MlSuite.Api.Controllers
         public string? dataInicio { get; set; }
         public string? dataFim { get; set; }
         public long? sellerId { get; set; }
+        [JsonConverter(typeof(EnumStringConverter<PedidoStatus>))]
         public PedidoStatus? status { get; set; }
+        [JsonConverter(typeof(EnumStringConverter<ShipmentType>))]
+
         public ShipmentType? tipoEnvio { get; set; }
+
+        public int? take { get; set; } = 15;
     }
 
     public class PedidoRetornoDto
     {
         public ulong Id { get; set; }
-        public TipoVendaMl TipoVenda { get; set; }
+        public string TipoVenda { get; set; }
         public ulong SellerId { get; set; }
         public string SellerNick { get; set; }
         public List<PedidoItemRetornoDto> Itens { get; set; }
@@ -39,7 +47,7 @@ namespace MlSuite.Api.Controllers
     }
 
 
-    [Route("pedidos"), Autorizar, EnableCors]
+    [Route("pedidos"), EnableCors, Autorizar]
     public class PedidosController : Controller
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -49,23 +57,23 @@ namespace MlSuite.Api.Controllers
             _scopeFactory = scopeFactory;
         }
 
-        [HttpGet("buscar"), Anônimo]
+        
+        [HttpGet("buscar"), AllowAnonymous]
         public async Task<IActionResult> BuscarPedidos(BuscaPedidosFiltroDto dto)
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
             var context = provider.GetRequiredService<TrilhaDbContext>();
 
             IQueryable<Order> initialQuery = context.Orders
-                    //.AsNoTracking()
+                //.AsNoTracking()
                 .Include(x => x.Itens)
                 .ThenInclude(orderItem => orderItem.Item)
                 .Include(x => x.Shipping)
-                .Include(x=>x.Pack)
-                .ThenInclude(y=>y.Pedidos)
-                .ThenInclude(z=>z.Itens)
-                .ThenInclude(w=>w.Item)
-                    .GroupBy(a => a.Shipping.Id)
-                    .Select(group => group.First())
+                .Include(x => x.Pack)
+                .ThenInclude(y => y.Pedidos)
+                .ThenInclude(z => z.Itens)
+                .ThenInclude(w => w.Item)
+
                 ;
 
             if (dto.tipoEnvio != null)
@@ -83,7 +91,7 @@ namespace MlSuite.Api.Controllers
                         );
                     break;
                 case PedidoStatus.ProntoParaSeparacao:
-                    initialQuery = initialQuery.Where(x => x.Shipping != null && 
+                    initialQuery = initialQuery.Where(x => x.Shipping != null &&
                                                            x.Shipping.Status == ShipmentStatus.ProntoParaEnvio && x.Shipping.SubStatus == ShipmentSubStatus.ProntoParaImpressão);
                     break;
                 case PedidoStatus.Processado:
@@ -120,14 +128,17 @@ namespace MlSuite.Api.Controllers
                 initialQuery = initialQuery.Where(x => x.CreatedAt <= dataFim.ToDateTime(TimeOnly.MaxValue));
             }
 
-            int numRegistros = await initialQuery.CountAsync();
-            int numPags = numRegistros / 50;
+            int numRegistros = await initialQuery
+                .GroupBy(a => a.Shipping.Id)
+                .Select(group => group.First()).CountAsync();
+            int numPags = numRegistros / (dto.take ?? 15);
 
-            List<PedidoRetornoDto> Pedidos = new(50);
+            List<PedidoRetornoDto> Pedidos = new(100);
             Dictionary<ulong, MlUserAuthInfo> Sellers = await context.MlUserAuthInfos.ToDictionaryAsync(x => x.UserId);
-            foreach (Order order in await initialQuery.Take(100).ToListAsync())
+            foreach (Order order in await initialQuery.GroupBy(a => a.Shipping.Id)
+                         .Select(group => group.First()).Take((dto.take ?? 15)).ToListAsync())
             {
-                if (Pedidos.Count == 50) break;
+                if (Pedidos.Count == 10) break;
                 if (order.Pack != null)
                 {
                     Pedidos.Add(new PedidoRetornoDto()
@@ -135,8 +146,8 @@ namespace MlSuite.Api.Controllers
                         Id = order.Pack.Id,
                         SellerNick = Sellers[order.SellerId].AccountNickname,
                         SellerId = order.SellerId,
-                        TipoVenda = TipoVendaMl.Pack,
-                        Itens = order.Pack.Pedidos.SelectMany(x=>x.Itens.Select(y=>new PedidoItemRetornoDto()
+                        TipoVenda = TipoVendaMl.Pack.ToString(),
+                        Itens = order.Pack.Pedidos.SelectMany(x => x.Itens.Select(y => new PedidoItemRetornoDto()
                         {
                             Descrição = y.Título,
                             Sku = y.Sku,
@@ -151,9 +162,9 @@ namespace MlSuite.Api.Controllers
                     {
                         Id = order.Id,
                         SellerNick = Sellers[order.SellerId].AccountNickname,
-                        SellerId = order.SellerId,           
-                        TipoVenda = TipoVendaMl.Order,
-                        Itens = order.Itens.Select(y=>new PedidoItemRetornoDto()
+                        SellerId = order.SellerId,
+                        TipoVenda = TipoVendaMl.Order.ToString(),
+                        Itens = order.Itens.Select(y => new PedidoItemRetornoDto()
                         {
                             Descrição = y.Título,
                             Sku = y.Sku,
@@ -169,9 +180,10 @@ namespace MlSuite.Api.Controllers
                 var r0 = new RetornoDto("Pedidos encontrados", new { Pedidos, Paginas = numPags, DEBUG = Pedidos.Count });
                 return Ok(r0);
             }
-            
+
             var r1 = new RetornoDto("Nenhum pedido encontrado com o filtro aplicado");
             return Ok(r1);
         }
+        
     }
 }

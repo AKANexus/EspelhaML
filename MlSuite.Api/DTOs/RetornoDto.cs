@@ -33,8 +33,8 @@ namespace MlSuite.Api.DTOs
 		{
 			get
 			{
-				if (Dados is IEnumerable)
-					return Dados.Count;
+				if (Dados is IEnumerable dadosContáveis)
+					return dadosContáveis.Cast<object>().Count();
 				if (Dados is not null)
 					return 1;
 				else

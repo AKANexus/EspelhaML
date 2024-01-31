@@ -30,7 +30,8 @@ NpgsqlConnectionStringBuilder csb = new()
     Port = 5432,
     Username = "meliDBA",
     Password = Secrets.NpgPassword,
-    Host = "ec2-15-228-160-231.sa-east-1.compute.amazonaws.com"
+    Host = "ec2-15-228-160-231.sa-east-1.compute.amazonaws.com",
+    IncludeErrorDetail = true
 
 
 };

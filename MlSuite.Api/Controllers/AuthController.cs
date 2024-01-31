@@ -54,6 +54,7 @@ namespace MlSuite.Api.Controllers
             }
 
             DateTime jwtExpiry = DateTime.UtcNow.AddHours(Env.ApiKeyLifeTimeHours);
+            //DateTime jwtExpiry = DateTime.UtcNow.AddMinutes(Env.ApiKeyLifeTimeHours);
             var jwtUtils = scope.ServiceProvider.GetRequiredService<JwtUtils>();
             var jwToken = jwtUtils.GenerateJwt(userInfoTentativo, jwtExpiry);
             var rtGenerator = scope.ServiceProvider.GetRequiredService<RefreshTokenGenerator>();
@@ -81,34 +82,42 @@ namespace MlSuite.Api.Controllers
             IServiceScope scope = _scopeFactory.CreateScope();
             var jwtUtils = scope.ServiceProvider.GetRequiredService<JwtUtils>();
             var rtToken = dto.RefreshToken;
-            if (rtToken == null || dto.ApiKey == null)
+            if (rtToken == null)
             {
                 var retorno1 = new RetornoDto("Refresh token inválida - 86.");
                 return BadRequest(new {retorno1.Mensagem, retorno1.Registros, Codigo = "RT_INVALIDA"});
             }
-            var oldJwt = await jwtUtils.ValidateJwtAsync(dto.ApiKey);
-            if (oldJwt.except != null || oldJwt.userInfo == null)
-            {
-                var retorno1 = new RetornoDto($"Api token token inválida - 92\n{oldJwt.except}.");
-                return Unauthorized(new {retorno1.Mensagem, retorno1.Registros, Codigo = "APIKEY_INVALIDA"});
-            }
+            //var oldJwt = await jwtUtils.ValidateJwtAsync(dto.ApiKey);
+            //if (oldJwt.except != null || oldJwt.userInfo == null)
+            //{
+            //    var retorno1 = new RetornoDto($"Api token token inválida - 92\n{oldJwt.except}.");
+            //    return Unauthorized(new {retorno1.Mensagem, retorno1.Registros, Codigo = "APIKEY_INVALIDA"});
+            //}
             var dbContext = scope.ServiceProvider.GetRequiredService<TrilhaDbContext>();
+            var userPorRefreshToken = await dbContext.RefreshTokens.AsNoTracking().Include(refreshToken => refreshToken.UserInfo).FirstOrDefaultAsync(x => x.Token == rtToken);
+            if (userPorRefreshToken == null)
+            {
+                var retorno1 = new RetornoDto("Refresh token inválida - 100.");
+                return BadRequest(new {retorno1.Mensagem, retorno1.Registros, Codigo = "RT_INVALIDA"});
+
+            }
             var userTentativo = await dbContext.Usuários.AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Uuid == oldJwt.userInfo.Uuid);
+                .FirstOrDefaultAsync(x => x.Uuid == userPorRefreshToken.UserInfo.Uuid);
             if (userTentativo == null)
             {
-                var retorno1 = new RetornoDto("Api token token inválida - 100.");
+                var retorno1 = new RetornoDto("Api token token inválida - 108.");
                 return Unauthorized(new {retorno1.Mensagem, retorno1.Registros, Codigo = "APIKEY_INVALIDA"});
             }
             var refreshTokenTentativo = await dbContext.RefreshTokens
                 .Include(refreshToken => refreshToken.UserInfo).FirstOrDefaultAsync(x => x.Token == rtToken);
             if (refreshTokenTentativo == null)
             {
-                var retorno1 = new RetornoDto("Refresh token inválida - 107.");
+                var retorno1 = new RetornoDto("Refresh token inválida - 115.");
                 return Unauthorized(new {retorno1.Mensagem, retorno1.Registros, Codigo = "RT_INVALIDA"});
             }
 
             DateTime jwtExpiry = DateTime.UtcNow.AddHours(Env.ApiKeyLifeTimeHours);
+            //DateTime jwtExpiry = DateTime.UtcNow.AddMinutes(Env.ApiKeyLifeTimeHours);
             var jwToken = jwtUtils.GenerateJwt(refreshTokenTentativo.UserInfo, jwtExpiry);
             var rtGenerator = scope.ServiceProvider.GetRequiredService<RefreshTokenGenerator>();
             var newRt = await rtGenerator.GenerateNewRefreshToken(refreshTokenTentativo.UserInfo.Uuid, IpAddress());

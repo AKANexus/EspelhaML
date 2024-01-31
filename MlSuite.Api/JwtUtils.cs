@@ -18,9 +18,8 @@ namespace MlSuite.Api
 			_scopeFactory = scopeFactory;
 		}
 
-		public string GenerateJwt(UserInfo userInfo, DateTime? expiryDate = null)
+		public string GenerateJwt(UserInfo userInfo, DateTime expiryDate)
 		{
-			expiryDate ??= DateTime.UtcNow.AddHours(12);
 			JwtSecurityTokenHandler tokenHandler = new();
 			byte[] key = Encoding.UTF32.GetBytes(Secrets.JwtSecret);
 			SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor

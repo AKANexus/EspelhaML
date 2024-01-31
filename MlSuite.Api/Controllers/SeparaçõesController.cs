@@ -261,7 +261,7 @@ namespace MlSuite.Api.Controllers
 
             foreach (CriarSeparaçãoItemDto itemDto in dto.Pedidos)
             {
-                if (itemDto.Tipo.Equals("P", StringComparison.InvariantCultureIgnoreCase))
+                if (itemDto.Tipo[..1].Equals("P", StringComparison.InvariantCultureIgnoreCase))
                 {
                     var packTentativo = await context.Packs
 
@@ -307,7 +307,7 @@ namespace MlSuite.Api.Controllers
                         novaSeparação.Embalagens.Add(novaEmbalagem);
                     }
                 }
-                else if (itemDto.Tipo.Equals("O", StringComparison.InvariantCultureIgnoreCase))
+                else if (itemDto.Tipo[..1].Equals("O", StringComparison.InvariantCultureIgnoreCase))
                 {
                     var orderTentativa = await context.Orders
 
@@ -353,11 +353,10 @@ namespace MlSuite.Api.Controllers
                     }
                 }
                 novaSeparação.SellerId = (ulong)selectedSellerId;
-
-                context.Update(novaSeparação);
-                await context.SaveChangesAsync();
-
             }
+
+            context.Add(novaSeparação);
+            await context.SaveChangesAsync();
 
             var r0 = new RetornoDto("Separação gerada com sucesso", novaSeparação);
             return Ok(r0);

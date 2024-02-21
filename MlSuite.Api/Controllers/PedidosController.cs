@@ -27,22 +27,32 @@ namespace MlSuite.Api.Controllers
         public ShipmentType? tipoEnvio { get; set; }
 
         public int? take { get; set; } = 15;
+        public int? skip { get; set; } = 0;
     }
 
     public class PedidoRetornoDto
     {
+        [JsonPropertyName("id")]
         public ulong Id { get; set; }
+        [JsonPropertyName("tipo_venda")]
         public string TipoVenda { get; set; }
+        [JsonPropertyName("seller_id")]
         public ulong SellerId { get; set; }
+        [JsonPropertyName("seller_nick")]
         public string SellerNick { get; set; }
+        [JsonPropertyName("itens")]
         public List<PedidoItemRetornoDto> Itens { get; set; }
     }
 
     public class PedidoItemRetornoDto
     {
+        [JsonPropertyName("sku")]
         public string Sku { get; set; }
+        [JsonPropertyName("url_imagem")]
         public string UrlImagem { get; set; }
+        [JsonPropertyName("descrição")]
         public string Descrição { get; set; }
+        [JsonPropertyName("quantidade")]
         public int Quantidade { get; set; }
     }
 
@@ -92,7 +102,18 @@ namespace MlSuite.Api.Controllers
                     break;
                 case PedidoStatus.ProntoParaSeparacao:
                     initialQuery = initialQuery.Where(x => x.Shipping != null &&
-                                                           x.Shipping.Status == ShipmentStatus.ProntoParaEnvio && x.Shipping.SubStatus == ShipmentSubStatus.ProntoParaImpressão);
+                                                           x.Shipping.Status == ShipmentStatus.ProntoParaEnvio &&
+                                                           x.Shipping.SubStatus ==
+                                                           ShipmentSubStatus.ProntoParaImpressão &&
+                                                           x.Shipping.Embalagem == null);
+
+                    break;
+                case PedidoStatus.EmLista:
+                    initialQuery = initialQuery.Where(x => x.Shipping != null &&
+                                                           x.Shipping.Status == ShipmentStatus.ProntoParaEnvio &&
+                                                           x.Shipping.SubStatus ==
+                                                           ShipmentSubStatus.ProntoParaImpressão &&
+                                                           x.Shipping.Embalagem != null);
                     break;
                 case PedidoStatus.Processado:
                     initialQuery = initialQuery.Where(x =>
@@ -136,7 +157,7 @@ namespace MlSuite.Api.Controllers
             List<PedidoRetornoDto> Pedidos = new(100);
             Dictionary<ulong, MlUserAuthInfo> Sellers = await context.MlUserAuthInfos.ToDictionaryAsync(x => x.UserId);
             foreach (Order order in await initialQuery.GroupBy(a => a.Shipping.Id)
-                         .Select(group => group.First()).Take((dto.take ?? 15)).ToListAsync())
+                         .Select(group => group.First()).Skip(dto.skip ?? 10).Take(dto.take ?? 15).ToListAsync())
             {
                 if (Pedidos.Count == 10) break;
                 if (order.Pack != null)

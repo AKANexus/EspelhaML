@@ -10,6 +10,7 @@ namespace MlSuite.Domain.Enums
     {
         PendenciaML,
         ProntoParaSeparacao,
-        Processado
+        Processado,
+        EmLista
     }
 }

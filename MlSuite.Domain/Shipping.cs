@@ -18,4 +18,5 @@ public class Shipping : EntityBase
     public ShipmentType TipoEnvio { get; set; }
     public PedidoDestinatário? Destinatário { get; set; }
     public string? Etiqueta { get; set; }
+    public Embalagem? Embalagem { get; set; }
 }

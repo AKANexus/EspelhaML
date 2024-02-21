@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MlSuite.EntityFramework.EntityFramework;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MlSynch.Migrations
 {
     [DbContext(typeof(TrilhaDbContext))]
-    partial class TrilhaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240201215536_ShippingRelation")]
+    partial class ShippingRelation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -46,9 +49,6 @@ namespace MlSynch.Migrations
                     b.Property<int>("StatusEmbalagem")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("TimestampImpressao")
-                        .HasColumnType("timestamp without time zone");
-
                     b.Property<int>("TipoVendaMl")
                         .HasColumnType("integer");
 
@@ -59,8 +59,7 @@ namespace MlSynch.Migrations
 
                     b.HasIndex("SeparaçãoUuid");
 
-                    b.HasIndex("ShippingUuid")
-                        .IsUnique();
+                    b.HasIndex("ShippingUuid");
 
                     b.HasIndex("ReferenciaId", "TipoVendaMl")
                         .IsUnique();
@@ -624,16 +623,16 @@ namespace MlSynch.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<DateTime?>("Fim")
+                    b.Property<DateTime>("Fim")
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<long>("Identificador")
-                        .ValueGeneratedOnAddOrUpdate()
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Identificador"));
 
-                    b.Property<DateTime?>("Início")
+                    b.Property<DateTime>("Início")
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<decimal>("SellerId")
@@ -783,8 +782,8 @@ namespace MlSynch.Migrations
                         .HasForeignKey("SeparaçãoUuid");
 
                     b.HasOne("MlSuite.Domain.Shipping", "Shipping")
-                        .WithOne("Embalagem")
-                        .HasForeignKey("MlSuite.Domain.Embalagem", "ShippingUuid")
+                        .WithMany()
+                        .HasForeignKey("ShippingUuid")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -939,11 +938,6 @@ namespace MlSynch.Migrations
             modelBuilder.Entity("MlSuite.Domain.Separação", b =>
                 {
                     b.Navigation("Embalagens");
-                });
-
-            modelBuilder.Entity("MlSuite.Domain.Shipping", b =>
-                {
-                    b.Navigation("Embalagem");
                 });
 #pragma warning restore 612, 618
         }

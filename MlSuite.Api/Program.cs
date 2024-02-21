@@ -4,6 +4,7 @@ using Microsoft.OpenApi.Models;
 using MlSuite.Api;
 using MlSuite.Api.Middlewares;
 using MlSuite.Api.Services;
+using MlSuite.Domain;
 using MlSuite.Domain.Enums;
 using MlSuite.Domain.Enums.JsonConverters;
 using MlSuite.EntityFramework.EntityFramework;
@@ -16,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
+        options.JsonSerializerOptions.Converters.Add(new EnumStringConverter<TipoVendaMl>());
         options.JsonSerializerOptions.Converters.Add(new EnumStringConverter<PedidoStatus>());
         options.JsonSerializerOptions.Converters.Add(new EnumStringConverter<ShipmentType>());
         options.JsonSerializerOptions.Converters.Add(new EnumStringConverter<WebHookTopic>());

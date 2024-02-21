@@ -47,7 +47,7 @@ namespace MlSuite.EntityFramework.EntityFramework
             modelBuilder.Entity<Separação>()
                 .Property(x => x.Identificador)
                 .UseIdentityAlwaysColumn()
-                .ValueGeneratedOnAdd();
+                .ValueGeneratedOnAddOrUpdate();
 
             modelBuilder.Entity<Embalagem>()
                 .HasIndex(x => new { x.ReferenciaId, x.TipoVendaMl }).IsUnique();

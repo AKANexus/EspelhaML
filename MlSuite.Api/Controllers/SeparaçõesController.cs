@@ -149,83 +149,83 @@ namespace MlSuite.Api.Controllers
             _scopeFactory = scopeFactory;
         }
 
-        [HttpGet("testeCriar"), Anônimo]
-        public async Task<IActionResult> CriaSeparaçãoDeTeste([FromQuery] string pedidos)
-        {
-            var provider = _scopeFactory.CreateScope().ServiceProvider;
-            var context = provider.GetRequiredService<TrilhaDbContext>();
+        //[HttpGet("testeCriar"), Anônimo]
+        //public async Task<IActionResult> CriaSeparaçãoDeTeste([FromQuery] string pedidos)
+        //{
+        //    var provider = _scopeFactory.CreateScope().ServiceProvider;
+        //    var context = provider.GetRequiredService<TrilhaDbContext>();
 
-            ulong[] pedidoIds = pedidos.Split(',').Select(ulong.Parse).ToArray();
-            Order[] tentativos = await context.Orders
-                .Include(x => x.Shipping)
-                .Include(x => x.Itens)
-                .ThenInclude(y => y.Item)
-                .Where(pedido => pedido.Shipping != null &&
-                                 pedido.Shipping.Status == ShipmentStatus.ProntoParaEnvio &&
-                                 pedido.Shipping.SubStatusDescrição != "invoice_pending" &&
-                                 pedido.Shipping.SubStatusDescrição != "picked_up" &&
-                                 pedido.Shipping.TipoEnvio != ShipmentType.Fulfillment &&
-                                 (pedido.Shipping.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
-                                  pedido.Shipping.SubStatus == ShipmentSubStatus.Impresso))
-                .Where(x => pedidoIds.Contains(x.Pack.Id) || pedidoIds.Contains(x.Id))
-                .ToArrayAsync();
-            List<ulong> pedidosInválidos = new();
-            Separação novaSeparação = new()
-            {
-                Usuário = await context.Usuários.FirstAsync(x => x.Username == "Teste"),
-                Identificador = (long)DateTime.UtcNow.Ticks
+        //    ulong[] pedidoIds = pedidos.Split(',').Select(ulong.Parse).ToArray();
+        //    Order[] tentativos = await context.Orders
+        //        .Include(x => x.Shipping)
+        //        .Include(x => x.Itens)
+        //        .ThenInclude(y => y.Item)
+        //        .Where(pedido => pedido.Shipping != null &&
+        //                         pedido.Shipping.Status == ShipmentStatus.ProntoParaEnvio &&
+        //                         pedido.Shipping.SubStatusDescrição != "invoice_pending" &&
+        //                         pedido.Shipping.SubStatusDescrição != "picked_up" &&
+        //                         pedido.Shipping.TipoEnvio != ShipmentType.Fulfillment &&
+        //                         (pedido.Shipping.SubStatus == ShipmentSubStatus.ProntoParaColeta ||
+        //                          pedido.Shipping.SubStatus == ShipmentSubStatus.Finalizado))
+        //        .Where(x => pedidoIds.Contains(x.Pack.Id) || pedidoIds.Contains(x.Id))
+        //        .ToArrayAsync();
+        //    List<ulong> pedidosInválidos = new();
+        //    Separação novaSeparação = new()
+        //    {
+        //        Usuário = await context.Usuários.FirstAsync(x => x.Username == "Teste"),
+        //        Identificador = (long)DateTime.UtcNow.Ticks
 
-            };
-            foreach (Order tentativo in tentativos)
-            {
-                var separaçãoTentativo = await context.Separações
-                    .Include(x => x.Embalagens)
-                    .FirstOrDefaultAsync(x => x.Embalagens.Any(y =>
-                        y.ReferenciaId == tentativo.Id && y.TipoVendaMl == TipoVendaMl.Order));
+        //    };
+        //    foreach (Order tentativo in tentativos)
+        //    {
+        //        var separaçãoTentativo = await context.Separações
+        //            .Include(x => x.Embalagens)
+        //            .FirstOrDefaultAsync(x => x.Embalagens.Any(y =>
+        //                y.ReferenciaId == tentativo.Id && y.TipoVendaMl == TipoVendaMl.Order));
 
-                if (separaçãoTentativo != null)
-                {
-                    pedidosInválidos.Add(tentativo.Id);
-                    //continue;
-                }
-                else
-                {
-                    if (novaSeparação.SellerId == default)
-                        novaSeparação.SellerId = tentativo.SellerId;
-                    else
-                    {
-                        if (tentativo.SellerId != novaSeparação.SellerId)
-                        {
-                            pedidosInválidos.Add(tentativo.Id);
-                            continue;
-                        }
-                    }
-                    novaSeparação.Embalagens.Add(new Embalagem()
-                    {
-                        TipoVendaMl = TipoVendaMl.Order,
-                        ShippingId = tentativo.Shipping!.Id,
-                        ReferenciaId = tentativo.Id,
-                        EmbalagemItems = tentativo.Itens.Select(y => new EmbalagemItem()
-                        {
-                            SKU = y.Sku,
-                            ImageUrl = y.Item!.PrimeiraFoto,
-                            QuantidadeEscaneada = 0,
-                            QuantidadeAEscanear = y.QuantidadeVendida,
-                            Descrição = y.Título
-                        }).ToList()
-                    });
-                }
-            }
+        //        if (separaçãoTentativo != null)
+        //        {
+        //            pedidosInválidos.Add(tentativo.Id);
+        //            //continue;
+        //        }
+        //        else
+        //        {
+        //            if (novaSeparação.SellerId == default)
+        //                novaSeparação.SellerId = tentativo.SellerId;
+        //            else
+        //            {
+        //                if (tentativo.SellerId != novaSeparação.SellerId)
+        //                {
+        //                    pedidosInválidos.Add(tentativo.Id);
+        //                    continue;
+        //                }
+        //            }
+        //            novaSeparação.Embalagens.Add(new Embalagem()
+        //            {
+        //                TipoVendaMl = TipoVendaMl.Order,
+        //                Shipping = tentativo.Shipping,
+        //                ReferenciaId = tentativo.Id,
+        //                EmbalagemItems = tentativo.Itens.Select(y => new EmbalagemItem()
+        //                {
+        //                    SKU = y.Sku,
+        //                    ImageUrl = y.Item!.PrimeiraFoto,
+        //                    QuantidadeEscaneada = 0,
+        //                    QuantidadeAEscanear = y.QuantidadeVendida,
+        //                    Descrição = y.Título
+        //                }).ToList()
+        //            });
+        //        }
+        //    }
 
-            if (novaSeparação.Embalagens.Count > 0)
-            {
-                context.Update(novaSeparação);
-                await context.SaveChangesAsync();
-            }
+        //    if (novaSeparação.Embalagens.Count > 0)
+        //    {
+        //        context.Update(novaSeparação);
+        //        await context.SaveChangesAsync();
+        //    }
 
-            return Ok(new RetornoDto(mensagem: "Separação criada com sucesso!",
-                new { num_separacao = novaSeparação.Identificador, pedidos_inválidos = pedidosInválidos }));
-        }
+        //    return Ok(new RetornoDto(mensagem: "Separação criada com sucesso!",
+        //        new { num_separacao = novaSeparação.Identificador, pedidos_inválidos = pedidosInválidos }));
+        //}
 
         [HttpPost("criar"), Autorizar]
         public async Task<IActionResult> CriaSeparação([FromBody] CriarSeparaçãoRootDto dto)
@@ -293,8 +293,8 @@ namespace MlSuite.Api.Controllers
                         {
                             ReferenciaId = packTentativo.Id,
                             TipoVendaMl = TipoVendaMl.Pack,
-                            StatusEmbalagem = StatusEmbalagem.Aberto,
-                            ShippingId = packTentativo.Shipping.Id,
+                            StatusEmbalagem = StatusEmbalagem.Designado,
+                            Shipping = packTentativo.Shipping,
                             EmbalagemItems = packTentativo.Pedidos.SelectMany(x => x.Itens.Select(y => new EmbalagemItem()
                             {
                                 QuantidadeEscaneada = 0,
@@ -338,8 +338,8 @@ namespace MlSuite.Api.Controllers
                         {
                             ReferenciaId = orderTentativa.Id,
                             TipoVendaMl = TipoVendaMl.Order,
-                            StatusEmbalagem = StatusEmbalagem.Aberto,
-                            ShippingId = orderTentativa.Shipping.Id,
+                            StatusEmbalagem = StatusEmbalagem.Designado,
+                            Shipping = orderTentativa.Shipping,
                             EmbalagemItems = orderTentativa.Itens.Select(y => new EmbalagemItem()
                             {
                                 QuantidadeEscaneada = 0,
@@ -362,19 +362,107 @@ namespace MlSuite.Api.Controllers
             return Ok(r0);
         }
 
-        [HttpGet(""), Anônimo]
-        public async Task<IActionResult> GetSeparações()
+        [HttpPost("assumir"), Autorizar]
+        public async Task<IActionResult> AssumirSeparação(long separação)
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
             var context = provider.GetRequiredService<TrilhaDbContext>();
 
-            var separaçõesNaoDesignadas = await context.Separações
-                .Where(x => x.Usuário == null)
-                .ToListAsync();
-
-            if (separaçõesNaoDesignadas.Count > 0)
+            object? userUuid = HttpContext.Items["user_info"];
+            if (userUuid is not UserInfo userInfo)
             {
-                var r1 = new RetornoDto("Foram encontradas separações", separaçõesNaoDesignadas);
+                var retorno1 = new RetornoDto("Uuid não foi determinada.");
+                return Ok(new { retorno1.Mensagem, Codigo = "UUID_NAO_DETERMINADO" });
+            }
+
+            UserInfo? requestingUser = await context.Usuários.FirstOrDefaultAsync(x =>
+                x.Uuid == userInfo.Uuid);
+
+            if (requestingUser == null)
+            {
+                var retorno1 = new RetornoDto("Uuid não foi encontrada.");
+                return Ok(new { retorno1.Mensagem, Codigo = "UUID_NAO_ENCONTRADO" });
+
+            }
+
+            var separaçãoTentativa = await context.Separações
+                .Include(separação => separação.Usuário)
+                .FirstOrDefaultAsync(x => x.Identificador == separação);
+
+            if (separaçãoTentativa == null)
+            {
+                var retorno1 = new RetornoDto("Separação não foi encontrada.");
+                return Ok(new { retorno1.Mensagem, Codigo = "SEPARACAO_NAO_ENCONTRADO" });
+            }
+
+            if (separaçãoTentativa.Usuário != null)
+            {
+                var retorno1 = new RetornoDto("Separação já assumida.");
+                return Ok(new { retorno1.Mensagem, Codigo = "SEPARACAO_JA_ASSUMIDA" });
+            }
+
+            //separaçãoTentativa.Início = DateTime.UtcNow;
+            separaçãoTentativa.Usuário = requestingUser;
+
+            context.Update(separaçãoTentativa);
+            await context.SaveChangesAsync();
+
+            var retorno2 = new RetornoDto("Separação assumida com sucesso",
+                new { Usuário = requestingUser.DisplayName, separaçãoTentativa.Identificador });
+            return Ok(retorno2);
+
+        }
+
+        [HttpGet(""), Autorizar]
+        public async Task<IActionResult> GetSeparações([FromQuery] string assumidas = "N")
+        {
+            if (!new[] { "S", "N", "s", "n" }.Contains(assumidas))
+            {
+                var retorno0 = new RetornoDto("Valor inválido para a consulta \"assumidas\"", null, "FILTRO_INVALIDO");
+                return BadRequest(retorno0);
+            }
+            var provider = _scopeFactory.CreateScope().ServiceProvider;
+            var context = provider.GetRequiredService<TrilhaDbContext>();
+
+            object? userUuid = HttpContext.Items["user_info"];
+            if (userUuid is not UserInfo userInfo)
+            {
+                var retorno1 = new RetornoDto("Uuid não foi determinada.");
+                return Ok(new { retorno1.Mensagem, Codigo = "UUID_NAO_DETERMINADO" });
+            }
+
+            UserInfo? requestingUser = await context.Usuários.FirstOrDefaultAsync(x =>
+                x.Uuid == userInfo.Uuid);
+
+            if (requestingUser == null)
+            {
+                var retorno1 = new RetornoDto("Uuid não foi encontrada.");
+                return Ok(new { retorno1.Mensagem, Codigo = "UUID_NAO_ENCONTRADO" });
+
+            }
+
+            IQueryable<Separação> query = context.Separações
+                .Include(x => x.Embalagens)
+                .ThenInclude(y => y.EmbalagemItems)
+                .Include(x=>x.Usuário);
+
+            if (assumidas.Equals("n", StringComparison.InvariantCultureIgnoreCase))
+            {
+                query = query.Where(x => x.Usuário == null);
+            }
+            else
+            {
+                query = query.Where(x =>x.Usuário != null && x.Usuário.Uuid == requestingUser.Uuid && x.Fim != null);
+            }
+
+
+            var separaçõesARetornar = await query.ToListAsync();
+
+            if (separaçõesARetornar.Count > 0)
+            {
+                Dictionary<ulong, MlUserAuthInfo> sellers = await context.MlUserAuthInfos.ToDictionaryAsync(x => x.UserId);
+
+                var r1 = new RetornoDto("Foram encontradas separações", separaçõesARetornar.Select(x=> new SeparaçãoDto(x, sellers[x.SellerId])));
                 return Ok(r1);
             }
 
@@ -383,7 +471,7 @@ namespace MlSuite.Api.Controllers
         }
 
         [HttpGet("aberta"), Autorizar]
-        public async Task<IActionResult> GetSeparaçãoEmAberto()
+        public async Task<IActionResult> GetSeparaçãoEmAndamento()
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
             var context = provider.GetRequiredService<TrilhaDbContext>();
@@ -410,7 +498,7 @@ namespace MlSuite.Api.Controllers
                 .ThenInclude(y => y.EmbalagemItems)
                 .FirstOrDefaultAsync(separação =>
                     separação.Usuário == requestingUser &&
-                    separação.Embalagens.Any(x => x.StatusEmbalagem != StatusEmbalagem.Impresso));
+                    separação.Embalagens.Any(x => x.StatusEmbalagem != StatusEmbalagem.Finalizado));
             if (separaçãoAberta != null)
             {
                 var r1 = new RetornoDto("Há uma separação em aberto", separaçãoAberta);
@@ -422,7 +510,7 @@ namespace MlSuite.Api.Controllers
         }
 
         [HttpPost("processar"), Autorizar]
-        public async Task<IActionResult> ProcessaSku([FromQuery] string sku, [FromQuery] long idSeparacao)
+        public async Task<IActionResult> ProcessaSku([FromQuery] string sku, [FromQuery] long? idSeparacao = null)
         {
             var provider = _scopeFactory.CreateScope().ServiceProvider;
             var context = provider.GetRequiredService<TrilhaDbContext>();
@@ -444,11 +532,33 @@ namespace MlSuite.Api.Controllers
 
             }
 
-            var workingSeparação = await context.Separações
-                .Include(x => x.Embalagens)
-                .ThenInclude(y => y.EmbalagemItems)
-                .Include(x => x.Usuário)
-                .FirstOrDefaultAsync(separação => separação.Identificador == idSeparacao);
+            Separação? workingSeparação = null;
+            
+            if (idSeparacao is null)
+            {
+                workingSeparação = await context.Separações
+                    .Include(x => x.Embalagens)
+                    .ThenInclude(y => y.EmbalagemItems)
+                    .Include(x => x.Usuário).Include(separação => separação.Embalagens)
+                    .ThenInclude(embalagem => embalagem.Shipping)
+                    .FirstOrDefaultAsync(x=>x.Embalagens.All(y=>y.StatusEmbalagem == StatusEmbalagem.Designado &&
+                                                                x.Usuário != null &&
+                                                                x.Usuário.Uuid == requestingUser.Uuid &&
+                                                                x.Embalagens.Any(embalagem => 
+                                                                    embalagem.EmbalagemItems.Any(embalagemItem => 
+                                                                        embalagemItem.SKU == sku))));
+            }
+
+            else
+            {
+                workingSeparação = await context.Separações
+                    .Include(x => x.Embalagens)
+                    .ThenInclude(y => y.EmbalagemItems)
+                    .Include(x => x.Usuário).Include(separação => separação.Embalagens)
+                    .ThenInclude(embalagem => embalagem.Shipping)
+                    .FirstOrDefaultAsync(separação => separação.Identificador == idSeparacao && separação.Usuário != null &&
+                                                      separação.Usuário.Uuid == requestingUser.Uuid);
+            }
 
 
             if (workingSeparação == null)
@@ -468,7 +578,8 @@ namespace MlSuite.Api.Controllers
                 .Include(x => x.Usuário)
                 .FirstOrDefaultAsync(separação =>
                     separação.Usuário == requestingUser &&
-                    separação.Embalagens.Any(x => x.StatusEmbalagem != StatusEmbalagem.Impresso) &&
+                    separação.Início != null &&
+                    separação.Fim == null &&
                     separação.Identificador != idSeparacao);
 
             if (separaçãoEmAberto != null)
@@ -508,16 +619,18 @@ namespace MlSuite.Api.Controllers
             {
                 //Verificar se o SKU digitado pertence a alguma embalagem da separação
                 workingEmbalagem =
-                    workingSeparação.Embalagens.FirstOrDefault(x => x.EmbalagemItems.Any(y => y.SKU == sku));
+                    workingSeparação.Embalagens.FirstOrDefault(x => x.EmbalagemItems
+                        .Where(y=>y.QuantidadeAEscanear != y.QuantidadeEscaneada)
+                        .Any(y => y.SKU == sku));
 
                 if (workingEmbalagem == null)
                 {
-                    var r7 = new RetornoDto("O sku informado não pertence a essa embalagem");
+                    var r7 = new RetornoDto("O sku informado não pertence a essa separação");
                     return Ok(r7);
                 }
 
                 workingEmbalagem.EmbalagemItems.First(x => x.SKU == sku).QuantidadeEscaneada++;
-                workingEmbalagem.StatusEmbalagem = StatusEmbalagem.Aberto;
+                workingEmbalagem.StatusEmbalagem = StatusEmbalagem.Iniciado;
             }
 
             //Verificar se a embalagem finalizou
@@ -539,7 +652,7 @@ namespace MlSuite.Api.Controllers
                 }
 
                 var respostaEtiqueta =
-                    await mlApiService.GetLabelByShipment(mlUserInfo.AccessToken, workingEmbalagem.ShippingId.ToString());
+                    await mlApiService.GetLabelByShipment(mlUserInfo.AccessToken, workingEmbalagem.Shipping.Id.ToString());
 
                 if (respostaEtiqueta.data == null)
                 {
@@ -554,10 +667,10 @@ namespace MlSuite.Api.Controllers
                 string tempFolderPath = Path.Combine(Path.GetTempPath(), "MlSuite");
                 Directory.CreateDirectory(tempFolderPath);
 
-                string tempFilePath = Path.Combine(tempFolderPath, $"{workingEmbalagem.ShippingId}.zip");
+                string tempFilePath = Path.Combine(tempFolderPath, $"{workingEmbalagem.Shipping.Id}.zip");
                 await System.IO.File.WriteAllBytesAsync(tempFilePath, respostaEtiqueta.data);
 
-                string unzipPath = Path.Combine(tempFolderPath, $"Unzipped{workingEmbalagem.ShippingId}");
+                string unzipPath = Path.Combine(tempFolderPath, $"Unzipped{workingEmbalagem.Shipping.Id}");
                 System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, unzipPath);
 
                 string etiquetaFilePath = Path.Combine(unzipPath, "Etiqueta de envio.txt");
@@ -568,6 +681,7 @@ namespace MlSuite.Api.Controllers
 
                 //Grava etiqueta na Embalagem
                 workingEmbalagem.Etiqueta = etiquetaContent;
+                workingEmbalagem.TimestampImpressao = DateTime.UtcNow;
 
                 //Grava etiqueta no shipping
                 switch (workingEmbalagem.TipoVendaMl)
@@ -588,14 +702,16 @@ namespace MlSuite.Api.Controllers
                         throw new ArgumentOutOfRangeException();
                 }
 
-                //Altera status embalagem para "Impresso"
-                workingEmbalagem.StatusEmbalagem = StatusEmbalagem.Impresso;
+                //Altera status embalagem para "Finalizado"
+                workingEmbalagem.StatusEmbalagem = StatusEmbalagem.Finalizado;
 
                 context.Update(workingEmbalagem);
                 await context.SaveChangesAsync();
 
+                Dictionary<ulong, MlUserAuthInfo> sellers = await context.MlUserAuthInfos.ToDictionaryAsync(x => x.UserId);
+
                 //Retorna embalagem com etiqueta
-                var r8 = new RetornoDto("Embalagem finalizada com sucesso!", workingEmbalagem);
+                var r8 = new RetornoDto("Embalagem finalizada com sucesso!", new SeparaçãoDto(workingSeparação, sellers[workingSeparação.SellerId]));
                 return Ok(r8);
             }
 
@@ -604,7 +720,13 @@ namespace MlSuite.Api.Controllers
             {
                 //Embalagem ainda não finalizou
                 //Retorna "Item adicionado com sucesso" + embalagem
-                var r9 = new RetornoDto("Embalagem em processo de separação", workingEmbalagem);
+
+                context.Update(workingEmbalagem);
+                await context.SaveChangesAsync();
+
+                Dictionary<ulong, MlUserAuthInfo> sellers = await context.MlUserAuthInfos.ToDictionaryAsync(x => x.UserId);
+
+                var r9 = new RetornoDto("Embalagem em processo de separação", new SeparaçãoDto(workingSeparação, sellers[workingSeparação.SellerId]));
                 return Ok(r9);
             }
 
@@ -657,7 +779,7 @@ namespace MlSuite.Api.Controllers
                 .Include(x => x.Usuário)
                 .FirstOrDefaultAsync(separação =>
                     separação.Usuário == requestingUser &&
-                    separação.Embalagens.Any(x => x.StatusEmbalagem != StatusEmbalagem.Impresso) &&
+                    separação.Embalagens.Any(x => x.StatusEmbalagem != StatusEmbalagem.Finalizado) &&
                     separação.Identificador != idSeparacao);
 
             if (separaçãoEmAberto != null)
@@ -669,5 +791,46 @@ namespace MlSuite.Api.Controllers
             var r5 = new RetornoDto("Separação pronta para ser embalada", workingSeparação);
             return Ok(r5);
         }
+
+        //[HttpGet("assumidas"), Autorizar]
+        //public async Task<IActionResult> GetSeparaçõesAssumidas()
+        //{
+        //    var provider = _scopeFactory.CreateScope().ServiceProvider;
+        //    var context = provider.GetRequiredService<TrilhaDbContext>();
+
+        //    object? userUuid = HttpContext.Items["user_info"];
+        //    if (userUuid is not UserInfo userInfo)
+        //    {
+        //        var retorno1 = new RetornoDto("Uuid não foi determinada.");
+        //        return Ok(new { retorno1.Mensagem, Codigo = "UUID_NAO_DETERMINADO" });
+        //    }
+
+        //    UserInfo? requestingUser = await context.Usuários.FirstOrDefaultAsync(x =>
+        //        x.Uuid == userInfo.Uuid);
+
+        //    if (requestingUser == null)
+        //    {
+        //        var retorno1 = new RetornoDto("Uuid não foi encontrada.");
+        //        return Ok(new { retorno1.Mensagem, Codigo = "UUID_NAO_ENCONTRADO" });
+
+        //    }
+
+        //    var separações = await context.Separações
+        //        .Where(x => x.Usuário != null && x.Usuário.Uuid == requestingUser.Uuid && x.Início != null)
+        //        .Include(x => x.Embalagens)
+        //        .ThenInclude(y => y.EmbalagemItems)
+        //        .ToListAsync();
+
+        //    if (separações.Count == 0)
+        //    {
+        //        var retorno1 = new RetornoDto("Nenhuma separação assumida foi encontrada.", null, "SEPARACAO_NAO_ENCONTRADA");
+        //        return Ok(retorno1);
+        //    }
+        //    else
+        //    {
+        //        var retorno2 = new RetornoDto("Separações assumidas encontradas", new { usuario = requestingUser.DisplayName, embalagens = separações.SelectMany(x => x.Embalagens) });
+        //        return Ok(retorno2);
+        //    }
+        //}
     }
 }

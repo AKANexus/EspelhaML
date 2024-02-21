@@ -9,10 +9,12 @@ namespace MlSuite.Domain
 {
     public abstract class EntityBase
     {
-        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity), JsonIgnore]
         public Guid Uuid { get; set; }
 
+        [JsonIgnore]
         public DateTime CreatedAt { get; set; }
+        [JsonIgnore]
         public DateTime UpdatedAt { get; set; }
     }
 }
